@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type Word = { id: string; order: number; word: string; definition: string };
+type Word = { id: string; order: number; word: string; definition: string; phonetic?: string };
 type VocabList = { number: number; title: string; words: Word[] };
 type RecordItem = { stage: number; next: string; last: string; rating: "again"|"hard"|"known"; saved?: boolean };
 type Records = Record<string, RecordItem>;
@@ -90,10 +90,11 @@ export default function Home() {
 
       <div className="study-area">
         <div className="study-head"><span>{query?'搜索结果':mode==='review'?'今日复习':mode==='saved'?'我的收藏':`LIST ${activeList}`}</span><span>{activeWords.length?`${index+1} / ${activeWords.length}`:'0 / 0'}</span></div>
-        {current ? <article className={`word-card ${revealed?'revealed':''}`} onClick={()=>setRevealed(true)}>
+        {current ? <article key={current.id} className={`word-card ${revealed?'revealed':''}`} onClick={()=>setRevealed(true)}>
           <button className={`save ${records[current.id]?.saved?'saved':''}`} onClick={e=>{e.stopPropagation();toggleSaved()}} aria-label="收藏单词">{records[current.id]?.saved?'★':'☆'}</button>
           <div className="number">{String(current.order).padStart(2,'0')} <span>· LIST {current.list}</span></div>
           <h2>{current.word}</h2>
+          {current.phonetic&&<p className="phonetic">{current.phonetic}</p>}
           <button className="sound" onClick={e=>{e.stopPropagation();speechSynthesis.speak(new SpeechSynthesisUtterance(current.word))}}>↗ <span>听发音</span></button>
           <div className="definition"><small>释义</small><p>{current.definition||'释义待校对'}</p></div>
           {!revealed&&<div className="reveal">点击查看释义 <span>SPACE</span></div>}
