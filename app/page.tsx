@@ -30,7 +30,7 @@ export default function Home() {
   const [showPlan,setShowPlan]=useState(false);
   const fileRef=useRef<HTMLInputElement>(null);
 
-  useEffect(()=>{ fetch('/vocab.json').then(r=>r.json()).then(setLists); const raw=localStorage.getItem('ielts-vocab-records'); if(raw) try{setRecords(JSON.parse(raw))}catch{};setExamDate(localStorage.getItem('ielts-exam-date')||'') },[]);
+  useEffect(()=>{ fetch(`${import.meta.env.BASE_URL||'/'}vocab.json`).then(r=>r.json()).then(setLists); const raw=localStorage.getItem('ielts-vocab-records'); if(raw) try{setRecords(JSON.parse(raw))}catch{};setExamDate(localStorage.getItem('ielts-exam-date')||'') },[]);
   useEffect(()=>{ if(Object.keys(records).length) localStorage.setItem('ielts-vocab-records',JSON.stringify(records)); },[records]);
 
   const allWords=useMemo(()=>lists.flatMap(l=>l.words.map(w=>({...w,list:l.number}))),[lists]);
