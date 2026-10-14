@@ -6,10 +6,13 @@ type Word = { id: string; order: number; word: string; definition: string; phone
 type VocabList = { number: number; title: string; words: Word[] };
 type RecordItem = { stage: number; next: string; last: string; rating: "again"|"hard"|"known"; saved?: boolean };
 type Records = Record<string, RecordItem>;
+type Drill = "recognize"|"recall"|"dictation";
 
-const intervals = [0, 1, 2, 4, 7, 15, 30];
+const intervals = [0, 1, 3, 7, 15, 30, 60];
 const day = () => new Date().toISOString().slice(0, 10);
 const addDays = (n: number) => { const d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+const addMinutes = (n:number) => new Date(Date.now()+n*60_000).toISOString();
+const isDue = (next:string) => next.length===10 ? next<=day() : new Date(next).getTime()<=Date.now();
 
 export default function Home() {
   const [lists,setLists]=useState<VocabList[]>([]);
@@ -21,6 +24,9 @@ export default function Home() {
   const [mode,setMode]=useState<"learn"|"review"|"saved">("learn");
   const [showLists,setShowLists]=useState(false);
   const [showData,setShowData]=useState(false);
+  const [drill,setDrill]=useState<Drill>("recognize");
+  const [answer,setAnswer]=useState("");
+  const [sessionDone,setSessionDone]=useState(0);
   const fileRef=useRef<HTMLInputElement>(null);
 
   useEffect(()=>{ fetch('/vocab.json').then(r=>r.json()).then(setLists); const raw=localStorage.getItem('ielts-vocab-records'); if(raw) try{setRecords(JSON.parse(raw))}catch{} },[]);
@@ -29,25 +35,30 @@ export default function Home() {
   const allWords=useMemo(()=>lists.flatMap(l=>l.words.map(w=>({...w,list:l.number}))),[lists]);
   const activeWords=useMemo(()=>{
     if(query.trim()){const q=query.toLowerCase(); return allWords.filter(w=>w.word.toLowerCase().includes(q)||w.definition.includes(query)).slice(0,120)}
-    if(mode==='review') return allWords.filter(w=>records[w.id]&&records[w.id].next<=day());
+    if(mode==='review') return allWords.filter(w=>records[w.id]&&isDue(records[w.id].next));
     if(mode==='saved') return allWords.filter(w=>records[w.id]?.saved);
     return (lists.find(l=>l.number===activeList)?.words||[]).map(w=>({...w,list:activeList}));
   },[lists,allWords,activeList,mode,records,query]);
-  useEffect(()=>{setIndex(0);setRevealed(false)},[activeList,mode,query]);
+  useEffect(()=>{setIndex(0);setRevealed(false);setAnswer("")},[activeList,mode,query,drill]);
   const current=activeWords[index%Math.max(activeWords.length,1)];
   const learned=Object.values(records).filter(r=>r.rating==='known').length;
-  const due=allWords.filter(w=>records[w.id]&&records[w.id].next<=day()).length;
+  const due=allWords.filter(w=>records[w.id]&&isDue(records[w.id].next)).length;
   const progress=allWords.length?Math.round(Object.keys(records).length/allWords.length*100):0;
 
-  useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if((e.target as HTMLElement)?.tagName==='INPUT')return;if(e.code==='Space'){e.preventDefault();setRevealed(true)}if(e.key==='1')rate('again');if(e.key==='2')rate('hard');if(e.key==='3')rate('known')};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[current,activeWords.length,records]);
+  useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if((e.target as HTMLElement)?.tagName==='INPUT')return;if(e.code==='Space'){e.preventDefault();setRevealed(true)}if(e.key==='1')rate('again');if(e.key==='2')rate('hard');if(e.key==='3')rate('known')};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[current,activeWords.length,records,revealed]);
 
   function rate(rating:RecordItem['rating']){
-    if(!current) return;
+    if(!current||!revealed) return;
     const old=records[current.id]; let stage=old?.stage||0;
-    if(rating==='again') stage=0; else if(rating==='hard') stage=Math.max(1,stage); else stage=Math.min(6,stage+1);
-    setRecords(v=>({...v,[current.id]:{...v[current.id],stage,next:addDays(intervals[stage]),last:day(),rating}}));
-    setRevealed(false); setIndex(i=>(i+1)%Math.max(activeWords.length,1));
+    let next:string;
+    if(rating==='again'){stage=0;next=addMinutes(10)}
+    else if(rating==='hard'){stage=Math.max(1,stage);next=addDays(1)}
+    else {stage=Math.min(6,stage+1);next=addDays(intervals[stage])}
+    setRecords(v=>({...v,[current.id]:{...v[current.id],stage,next,last:day(),rating}}));
+    setSessionDone(v=>v+1);setAnswer("");setRevealed(false); setIndex(i=>(i+1)%Math.max(activeWords.length,1));
   }
+  function speak(){if(!current)return; speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(current.word);u.lang='en-GB';u.rate=.86;speechSynthesis.speak(u)}
+  function checkAnswer(){if(!answer.trim())return;setRevealed(true)}
   function toggleSaved(){ if(!current)return; const old=records[current.id]||{stage:0,next:day(),last:day(),rating:'again' as const}; setRecords(v=>({...v,[current.id]:{...old,saved:!old.saved}})); }
   function chooseList(n:number){setActiveList(n);setMode('learn');setQuery('');setShowLists(false)}
   function exportData(){const blob=new Blob([JSON.stringify(records,null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`词穹学习记录-${day()}.json`;a.click();URL.revokeObjectURL(a.href)}
@@ -73,7 +84,7 @@ export default function Home() {
       <div className="stats">
         <div><strong>{due}</strong><span>今日待复习</span></div>
         <div><strong>{learned}</strong><span>已经掌握</span></div>
-        <div><strong>{progress}%</strong><span>总进度</span></div>
+        <div><strong>{sessionDone}<small>/ 30</small></strong><span>本次学习目标</span></div>
       </div>
     </section>
 
@@ -89,20 +100,27 @@ export default function Home() {
       </aside>
 
       <div className="study-area">
+        <div className="drill-tabs" aria-label="训练模式">
+          <button className={drill==='recognize'?'active':''} onClick={()=>setDrill('recognize')}><b>看词</b><small>辨认释义</small></button>
+          <button className={drill==='recall'?'active':''} onClick={()=>setDrill('recall')}><b>看义</b><small>回想单词</small></button>
+          <button className={drill==='dictation'?'active':''} onClick={()=>{setDrill('dictation');setTimeout(speak,80)}}><b>听音</b><small>拼写单词</small></button>
+        </div>
         <div className="study-head"><span>{query?'搜索结果':mode==='review'?'今日复习':mode==='saved'?'我的收藏':`LIST ${activeList}`}</span><span>{activeWords.length?`${index+1} / ${activeWords.length}`:'0 / 0'}</span></div>
-        {current ? <article key={current.id} className={`word-card ${revealed?'revealed':''}`} onClick={()=>setRevealed(true)}>
+        {current ? <article key={current.id} className={`word-card ${revealed?'revealed':''}`} onClick={()=>drill==='recognize'&&setRevealed(true)}>
           <button className={`save ${records[current.id]?.saved?'saved':''}`} onClick={e=>{e.stopPropagation();toggleSaved()}} aria-label="收藏单词">{records[current.id]?.saved?'★':'☆'}</button>
           <div className="number">{String(current.order).padStart(2,'0')} <span>· LIST {current.list}</span></div>
-          <h2>{current.word}</h2>
-          {current.phonetic&&<p className="phonetic">{current.phonetic}</p>}
-          <button className="sound" onClick={e=>{e.stopPropagation();speechSynthesis.speak(new SpeechSynthesisUtterance(current.word))}}>↗ <span>听发音</span></button>
-          <div className="definition"><small>释义</small><p>{current.definition||'释义待校对'}</p></div>
-          {!revealed&&<div className="reveal">点击查看释义 <span>SPACE</span></div>}
+          {drill==='recognize' ? <><h2>{current.word}</h2>{current.phonetic&&<p className="phonetic">{current.phonetic}</p>}<button className="sound" onClick={e=>{e.stopPropagation();speak()}}>↗ <span>听发音</span></button><div className="definition"><small>释义</small><p>{current.definition||'释义待校对'}</p></div></> : <>
+            <div className="prompt-label">{drill==='dictation'?'听音拼写':'根据释义回想单词'}</div>
+            {drill==='dictation'?<button className="listen-orb" onClick={e=>{e.stopPropagation();speak()}} aria-label="播放发音">▶</button>:<p className="meaning-prompt">{current.definition||'释义待校对'}</p>}
+            <form className="answer-box" onClick={e=>e.stopPropagation()} onSubmit={e=>{e.preventDefault();checkAnswer()}}><input autoCapitalize="none" autoComplete="off" spellCheck={false} value={answer} onChange={e=>setAnswer(e.target.value)} placeholder="输入英文单词"/><button>确认</button></form>
+            {revealed&&<div className={`answer-result ${answer.trim().toLowerCase()===current.word.toLowerCase()?'correct':''}`}><small>{answer.trim().toLowerCase()===current.word.toLowerCase()?'拼写正确':'正确答案'}</small><b>{current.word}</b>{current.phonetic&&<span>{current.phonetic}</span>}</div>}
+          </>}
+          {!revealed&&drill==='recognize'&&<div className="reveal">点击查看释义 <span>SPACE</span></div>}
         </article> : <div className="empty"><b>{mode==='review'?'今天已经复习完成':'这里还没有单词'}</b><p>{mode==='review'?'去学几个新词，明天再回来。':'换一个 List 或搜索试试。'}</p></div>}
-        {current&&<div className="ratings">
-          <button onClick={()=>rate('again')}><kbd>1</kbd><span>生疏<small>稍后再见</small></span></button>
-          <button onClick={()=>rate('hard')}><kbd>2</kbd><span>模糊<small>明天复习</small></span></button>
-          <button className="primary" onClick={()=>rate('known')}><kbd>3</kbd><span>认识<small>进入下一节点</small></span></button>
+        {current&&<div className={`ratings ${!revealed?'waiting':''}`}>
+          <button disabled={!revealed} onClick={()=>rate('again')}><kbd>1</kbd><span>生疏<small>10 分钟后</small></span></button>
+          <button disabled={!revealed} onClick={()=>rate('hard')}><kbd>2</kbd><span>模糊<small>明天复习</small></span></button>
+          <button disabled={!revealed} className="primary" onClick={()=>rate('known')}><kbd>3</kbd><span>认识<small>{`约 ${intervals[Math.min(6,(records[current.id]?.stage||0)+1)]} 天后`}</small></span></button>
         </div>}
       </div>
     </section>
