@@ -6,6 +6,7 @@ type Word = { id: string; order: number; word: string; definition: string; phone
 type VocabList = { number: number; title: string; words: Word[] };
 type RecordItem = { stage: number; next: string; last: string; rating: "again"|"hard"|"known"; saved?: boolean; planNew?: boolean; passes?: Record<string,string[]>; completed?: string };
 type Records = Record<string, RecordItem>;
+type Checkin = { date:string; completed:number; mastered:number; reinforce:number };
 type Drill = "recognize"|"recall"|"dictation";
 const drillOrder:Drill[]=["recognize","recall","dictation"];
 const planLabels=["认识与听音","四选一辨义","听音拼写"];
@@ -33,9 +34,10 @@ export default function Home() {
   const [planIds,setPlanIds]=useState<string[]>([]);
   const [planRound,setPlanRound]=useState(0);
   const [choiceSelected,setChoiceSelected]=useState("");
+  const [todayCheckin,setTodayCheckin]=useState<Checkin|null>(null);
   const fileRef=useRef<HTMLInputElement>(null);
 
-  useEffect(()=>{ fetch(`${import.meta.env.BASE_URL||'/'}vocab.json`).then(r=>r.json()).then(setLists); const raw=localStorage.getItem('ielts-vocab-records'); if(raw) try{setRecords(JSON.parse(raw))}catch{};setExamDate(localStorage.getItem('ielts-exam-date')||'') },[]);
+  useEffect(()=>{ fetch(`${import.meta.env.BASE_URL||'/'}vocab.json`).then(r=>r.json()).then(setLists); const raw=localStorage.getItem('ielts-vocab-records'); if(raw) try{setRecords(JSON.parse(raw))}catch{};setExamDate(localStorage.getItem('ielts-exam-date')||'');try{const saved=JSON.parse(localStorage.getItem('ielts-checkins')||'[]');if(Array.isArray(saved))setTodayCheckin(saved.find((v:Checkin)=>v.date===day())||null)}catch{} },[]);
   useEffect(()=>{ if(Object.keys(records).length) localStorage.setItem('ielts-vocab-records',JSON.stringify(records)); },[records]);
 
   const allWords=useMemo(()=>lists.flatMap(l=>l.words.map(w=>({...w,list:l.number}))),[lists]);
@@ -89,7 +91,8 @@ export default function Home() {
   function choosePlanOption(option:string,correct:boolean){if(revealed)return;setChoiceSelected(option);setRevealed(true);window.setTimeout(()=>rate(correct?'known':'hard',true),700)}
   function submitPlanSpelling(){if(!current||!answer.trim()||revealed)return;const correct=answer.trim().toLowerCase()===current.word.toLowerCase();setRevealed(true);window.setTimeout(()=>rate(correct?'known':'again',true),850)}
   function startAnotherGroup(){const size=Math.max(1,planIds.length||dailyTarget);const candidates=allWords.filter(w=>!planIds.includes(w.id)&&!records[w.id]?.passes?.[day()]?.includes('dictation')).slice(0,size).map(w=>w.id);if(!candidates.length){setMode('checkin');return}setPlanIds(candidates);localStorage.setItem(`ielts-plan-${day()}`,JSON.stringify(candidates));setPlanRound(0);setIndex(0);setRevealed(false);setAnswer('');setChoiceSelected('')}
-  function finishCheckin(){const entry={date:day(),completed:planIds.length,mastered:planMastered,reinforce:planReinforce};let history:typeof entry[]=[];try{history=JSON.parse(localStorage.getItem('ielts-checkins')||'[]')}catch{}localStorage.setItem('ielts-checkins',JSON.stringify([...history.filter(v=>v.date!==entry.date),entry]));setMode('checkin')}
+  function finishCheckin(){const entry:Checkin={date:day(),completed:planIds.length,mastered:planMastered,reinforce:planReinforce};let history:Checkin[]=[];try{const saved=JSON.parse(localStorage.getItem('ielts-checkins')||'[]');history=Array.isArray(saved)?saved:[]}catch{}localStorage.setItem('ielts-checkins',JSON.stringify([...history.filter(v=>v.date!==entry.date),entry]));setTodayCheckin(entry);setMode('checkin')}
+  function openTodayPlan(){setMode(todayCheckin?'checkin':'plan')}
   function toggleSaved(){ if(!current)return; const old=records[current.id]||{stage:0,next:day(),last:day(),rating:'again' as const}; setRecords(v=>({...v,[current.id]:{...old,saved:!old.saved}})); }
   function chooseList(n:number){setActiveList(n);setMode('learn');setQuery('');setShowLists(false)}
   function exportData(){const blob=new Blob([JSON.stringify(records,null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`词穹学习记录-${day()}.json`;a.click();URL.revokeObjectURL(a.href)}
@@ -100,7 +103,7 @@ export default function Home() {
       <button className="brand" onClick={()=>{setMode('learn');setQuery('')}} aria-label="回到学习首页"><span>词穹</span><i>VOCABULARY</i></button>
       <nav>
         <button className={mode==='learn'?'active':''} onClick={()=>setMode('learn')}>学习</button>
-        <button className={mode==='plan'||mode==='checkin'?'active':''} onClick={()=>setMode('plan')}>今日计划</button>
+        <button className={mode==='plan'||mode==='checkin'?'active':''} onClick={openTodayPlan}>今日计划 {todayCheckin&&<b className="checked">✓</b>}</button>
         <button className={mode==='review'?'active':''} onClick={()=>setMode('review')}>今日复习 <b>{due}</b></button>
         <button className={mode==='saved'?'active':''} onClick={()=>setMode('saved')}>收藏</button>
       </nav>
@@ -121,11 +124,12 @@ export default function Home() {
     </section>}
 
     {mode==='checkin'&&<section className="checkin-page">
-      <div className="checkin-mark">✓</div>
+      <div className="checkin-mark" aria-label="今日打卡成功">✓</div>
       <p className="eyebrow">DAILY CHECK-IN · {day()}</p>
-      <h1>今天的学习，<br/>已经记下来了。</h1>
+      <h1>今日打卡成功</h1>
       <p>完成三轮训练比一次记住所有单词更重要。明天会继续安排需要强化的内容。</p>
-      <div className="checkin-stats"><div><strong>{planIds.length}</strong><span>本组完成</span></div><div><strong>{planMastered}</strong><span>已经掌握</span></div><div><strong>{planReinforce}</strong><span>需要强化</span></div></div>
+      <div className="checkin-stats"><div><strong>{todayCheckin?.completed??planIds.length}</strong><span>本组完成</span></div><div><strong>{todayCheckin?.mastered??planMastered}</strong><span>已经掌握</span></div><div><strong>{todayCheckin?.reinforce??planReinforce}</strong><span>需要强化</span></div></div>
+      <div className="checkin-confirmed"><span>✓</span> 已保存到今日记录</div>
       <button onClick={()=>setMode('learn')}>返回学习首页</button>
     </section>}
 
