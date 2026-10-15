@@ -4,9 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 type Word = { id: string; order: number; word: string; definition: string; phonetic?: string };
 type VocabList = { number: number; title: string; words: Word[] };
-type RecordItem = { stage: number; next: string; last: string; rating: "again"|"hard"|"known"; saved?: boolean };
+type RecordItem = { stage: number; next: string; last: string; rating: "again"|"hard"|"known"; saved?: boolean; planNew?: boolean; passes?: Record<string,string[]>; completed?: string };
 type Records = Record<string, RecordItem>;
 type Drill = "recognize"|"recall"|"dictation";
+const drillOrder:Drill[]=["recognize","recall","dictation"];
 
 const intervals = [0, 1, 3, 7, 15, 30, 60];
 const day = () => new Date().toISOString().slice(0, 10);
@@ -37,7 +38,7 @@ export default function Home() {
   const remaining=allWords.filter(w=>!records[w.id]).length;
   const daysLeft=examDate?Math.max(1,Math.ceil((new Date(`${examDate}T12:00:00`).getTime()-Date.now())/86_400_000)):0;
   const dailyTarget=examDate?Math.max(1,Math.ceil(remaining/daysLeft)):30;
-  const todayDone=Object.values(records).filter(r=>r.last===day()).length;
+  const todayDone=Object.values(records).filter(r=>r.completed===day()||(!r.completed&&r.last===day()&&!r.planNew)).length;
   const activeWords=useMemo(()=>{
     if(query.trim()){const q=query.toLowerCase(); return allWords.filter(w=>w.word.toLowerCase().includes(q)||w.definition.includes(query)).slice(0,120)}
     if(mode==='review') return allWords.filter(w=>records[w.id]&&isDue(records[w.id].next));
@@ -47,6 +48,10 @@ export default function Home() {
   },[lists,allWords,activeList,mode,records,query,dailyTarget]);
   useEffect(()=>{setIndex(0);setRevealed(false);setAnswer("")},[activeList,mode,query,drill]);
   const current=activeWords[index%Math.max(activeWords.length,1)];
+  const currentPasses=current?(records[current.id]?.passes?.[day()]||[]):[];
+  const guidedNew=!!current&&mode==='plan'&&(!records[current.id]||records[current.id]?.planNew===true);
+  const planStep=Math.min(currentPasses.length,2);
+  const activeDrill:Drill=guidedNew?drillOrder[planStep]:drill;
   const learned=Object.values(records).filter(r=>r.rating==='known').length;
   const due=allWords.filter(w=>records[w.id]&&isDue(records[w.id].next)).length;
   const progress=allWords.length?Math.round(Object.keys(records).length/allWords.length*100):0;
@@ -56,11 +61,17 @@ export default function Home() {
   function rate(rating:RecordItem['rating']){
     if(!current||!revealed) return;
     const old=records[current.id]; let stage=old?.stage||0;
+    if(guidedNew&&activeDrill!=='dictation'){
+      const nextPasses=[...new Set([...currentPasses,activeDrill])];
+      setRecords(v=>({...v,[current.id]:{...(v[current.id]||{}),stage,next:day(),last:day(),rating,planNew:true,passes:{...(v[current.id]?.passes||{}),[day()]:nextPasses}}}));
+      setAnswer("");setRevealed(false);return;
+    }
     let next:string;
     if(rating==='again'){stage=0;next=addMinutes(10)}
     else if(rating==='hard'){stage=Math.max(1,stage);next=addDays(1)}
     else {stage=Math.min(6,stage+1);next=addDays(intervals[stage])}
-    setRecords(v=>({...v,[current.id]:{...v[current.id],stage,next,last:day(),rating}}));
+    const passes=guidedNew?[...new Set([...currentPasses,activeDrill])]:currentPasses;
+    setRecords(v=>({...v,[current.id]:{...v[current.id],stage,next,last:day(),rating,planNew:false,completed:day(),passes:guidedNew?{...(v[current.id]?.passes||{}),[day()]:passes}:v[current.id]?.passes}}));
     setAnswer("");setRevealed(false); setIndex(i=>(i+1)%Math.max(activeWords.length,1));
   }
   function speak(){if(!current)return; speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(current.word);u.lang='en-GB';u.rate=.86;speechSynthesis.speak(u)}
@@ -108,22 +119,23 @@ export default function Home() {
       </aside>
 
       <div className="study-area">
+        {mode==='plan'&&<div className="plan-flow"><div><small>今日完成规则</small><strong>{guidedNew?'新词三步闭环':'复习词针对训练'}</strong></div><ol>{drillOrder.map((d,i)=><li key={d} className={guidedNew?(i<planStep?'done':i===planStep?'current':''):''}><i>{i<planStep?'✓':i+1}</i><span>{d==='recognize'?'看词辨义':d==='recall'?'看义回想':'听音拼写'}</span></li>)}</ol><p>{guidedNew?'完成三步后，这个词才计入今日进度。':'复习词完成当前训练即可，不必机械重复三遍。'}</p></div>}
         <div className="drill-tabs" aria-label="训练模式">
-          <button className={drill==='recognize'?'active':''} onClick={()=>setDrill('recognize')}><b>看词</b><small>辨认释义</small></button>
-          <button className={drill==='recall'?'active':''} onClick={()=>setDrill('recall')}><b>看义</b><small>回想单词</small></button>
-          <button className={drill==='dictation'?'active':''} onClick={()=>{setDrill('dictation');setTimeout(speak,80)}}><b>听音</b><small>拼写单词</small></button>
+          <button disabled={guidedNew} className={activeDrill==='recognize'?'active':''} onClick={()=>setDrill('recognize')}><b>看词</b><small>辨认释义</small></button>
+          <button disabled={guidedNew} className={activeDrill==='recall'?'active':''} onClick={()=>setDrill('recall')}><b>看义</b><small>回想单词</small></button>
+          <button disabled={guidedNew} className={activeDrill==='dictation'?'active':''} onClick={()=>{setDrill('dictation');setTimeout(speak,80)}}><b>听音</b><small>拼写单词</small></button>
         </div>
         <div className="study-head"><span>{query?'搜索结果':mode==='review'?'今日复习':mode==='saved'?'我的收藏':mode==='plan'?'今日计划':`LIST ${activeList}`}</span><span>{activeWords.length?`${index+1} / ${activeWords.length}`:'0 / 0'}</span></div>
-        {current ? <article key={current.id} className={`word-card ${revealed?'revealed':''}`} onClick={()=>drill==='recognize'&&setRevealed(true)}>
+        {current ? <article key={`${current.id}-${activeDrill}`} className={`word-card ${revealed?'revealed':''}`} onClick={()=>activeDrill==='recognize'&&setRevealed(true)}>
           <button className={`save ${records[current.id]?.saved?'saved':''}`} onClick={e=>{e.stopPropagation();toggleSaved()}} aria-label="收藏单词">{records[current.id]?.saved?'★':'☆'}</button>
           <div className="number">{String(current.order).padStart(2,'0')} <span>· LIST {current.list}</span></div>
-          {drill==='recognize' ? <><h2>{current.word}</h2>{current.phonetic&&<p className="phonetic">{current.phonetic}</p>}<button className="sound" onClick={e=>{e.stopPropagation();speak()}}>↗ <span>听发音</span></button><div className="definition"><small>释义</small><p>{current.definition||'释义待校对'}</p></div></> : <>
-            <div className="prompt-label">{drill==='dictation'?'听音拼写':'根据释义回想单词'}</div>
-            {drill==='dictation'?<button className="listen-orb" onClick={e=>{e.stopPropagation();speak()}} aria-label="播放发音">▶</button>:<p className="meaning-prompt">{current.definition||'释义待校对'}</p>}
+          {activeDrill==='recognize' ? <><h2>{current.word}</h2>{current.phonetic&&<p className="phonetic">{current.phonetic}</p>}<button className="sound" onClick={e=>{e.stopPropagation();speak()}}>↗ <span>听发音</span></button><div className="definition"><small>释义</small><p>{current.definition||'释义待校对'}</p></div></> : <>
+            <div className="prompt-label">{activeDrill==='dictation'?'听音拼写':'根据释义回想单词'}</div>
+            {activeDrill==='dictation'?<button className="listen-orb" onClick={e=>{e.stopPropagation();speak()}} aria-label="播放发音">▶</button>:<p className="meaning-prompt">{current.definition||'释义待校对'}</p>}
             <form className="answer-box" onClick={e=>e.stopPropagation()} onSubmit={e=>{e.preventDefault();checkAnswer()}}><input autoCapitalize="none" autoComplete="off" spellCheck={false} value={answer} onChange={e=>setAnswer(e.target.value)} placeholder="输入英文单词"/><button>确认</button></form>
             {revealed&&<div className={`answer-result ${answer.trim().toLowerCase()===current.word.toLowerCase()?'correct':''}`}><small>{answer.trim().toLowerCase()===current.word.toLowerCase()?'拼写正确':'正确答案'}</small><b>{current.word}</b>{current.phonetic&&<span>{current.phonetic}</span>}</div>}
           </>}
-          {!revealed&&drill==='recognize'&&<div className="reveal">点击查看释义 <span>SPACE</span></div>}
+          {!revealed&&activeDrill==='recognize'&&<div className="reveal">点击查看释义 <span>SPACE</span></div>}
         </article> : <div className="empty"><b>{mode==='review'?'今天已经复习完成':'这里还没有单词'}</b><p>{mode==='review'?'去学几个新词，明天再回来。':'换一个 List 或搜索试试。'}</p></div>}
         {current&&<div className={`ratings ${!revealed?'waiting':''}`}>
           <button disabled={!revealed} onClick={()=>rate('again')}><kbd>1</kbd><span>生疏<small>10 分钟后</small></span></button>
