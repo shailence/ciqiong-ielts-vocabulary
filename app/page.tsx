@@ -101,7 +101,7 @@ export default function Home() {
       <button className="data-btn" onClick={()=>setShowData(true)}>记录 · {progress}%</button>
     </header>
 
-    {mode==='plan'?<section className="plan-hero"><p className="eyebrow">TODAY · {day()}</p><h1>今天，只完成<br/><em>这三轮。</em></h1><p>不选章节，不看曲线。按顺序走完认识、辨义和拼写。</p><div><strong>{Math.min(planRound+1,3)}</strong><span>/ 3 轮</span></div></section>:<section className="hero">
+    {mode!=='plan'&&<section className="hero">
       <div className="hero-copy">
         <p className="eyebrow">IELTS · 64 LISTS · {allWords.length.toLocaleString()} WORDS</p>
         <h1>让每一个词，<br/><em>在恰好的时间重逢。</em></h1>
