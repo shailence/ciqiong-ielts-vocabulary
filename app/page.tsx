@@ -107,10 +107,6 @@ export default function Home() {
         <h1>让每一个词，<br/><em>在恰好的时间重逢。</em></h1>
         <p className="intro">依据艾宾浩斯记忆节奏安排复习。无需登录，进度安静地保存在你的浏览器里。</p>
       </div>
-      <figure className="theme-stickers" aria-label="史努比主题贴纸">
-        <img src={`${import.meta.env.BASE_URL||'/'}snoopy-stickers.png`} alt="史努比与伍德斯托克学习主题贴纸"/>
-        <figcaption>LEARN A LITTLE · EVERY DAY</figcaption>
-      </figure>
       <div className="stats">
         <div><strong>{due}</strong><span>今日待复习</span></div>
         <div><strong>{learned}</strong><span>已经掌握</span></div>
