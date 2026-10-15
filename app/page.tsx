@@ -23,7 +23,7 @@ export default function Home() {
   const [index,setIndex]=useState(0);
   const [revealed,setRevealed]=useState(false);
   const [query,setQuery]=useState("");
-  const [mode,setMode]=useState<"learn"|"review"|"saved"|"plan">("learn");
+  const [mode,setMode]=useState<"learn"|"review"|"saved"|"plan"|"checkin">("learn");
   const [showLists,setShowLists]=useState(false);
   const [showData,setShowData]=useState(false);
   const [drill,setDrill]=useState<Drill>("recognize");
@@ -60,14 +60,16 @@ export default function Home() {
   const progress=allWords.length?Math.round(Object.keys(records).length/allWords.length*100):0;
   const choiceIsCnToEn=!!current&&current.order%2===0;
   const choiceOptions=useMemo(()=>{if(!current)return[];const pool=allWords.filter(w=>w.id!==current.id);const picked=[0,1,2].map(i=>pool[(current.order*37+i*193)%Math.max(pool.length,1)]).filter(Boolean);return [current,...picked].sort((a,b)=>((a.order*17)%11)-((b.order*17)%11)).map(w=>choiceIsCnToEn?w.word:w.definition)},[current,allWords,choiceIsCnToEn]);
+  const planMastered=planIds.filter(id=>records[id]?.rating==='known').length;
+  const planReinforce=Math.max(0,planIds.length-planMastered);
 
   useEffect(()=>{if(mode==='plan'&&planIds.length&&activeWords.length===0&&planRound<2){setPlanRound(r=>r+1);setIndex(0);setRevealed(false);setAnswer("");setChoiceSelected("")}},[mode,planIds.length,activeWords.length,planRound]);
   useEffect(()=>{if(mode==='plan'&&activeDrill==='recognize'&&current){const t=setTimeout(speak,180);return()=>clearTimeout(t)}},[mode,activeDrill,current?.id]);
 
   useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if((e.target as HTMLElement)?.tagName==='INPUT')return;if(e.code==='Space'){e.preventDefault();setRevealed(true)}if(e.key==='1')rate('again');if(e.key==='2')rate('hard');if(e.key==='3')rate('known')};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[current,activeWords.length,records,revealed]);
 
-  function rate(rating:RecordItem['rating']){
-    if(!current||!revealed) return;
+  function rate(rating:RecordItem['rating'],force=false){
+    if(!current||(!revealed&&!force)) return;
     const old=records[current.id]; let stage=old?.stage||0;
     if(mode==='plan'&&activeDrill!=='dictation'){
       const nextPasses=[...new Set([...currentPasses,activeDrill])];
@@ -84,6 +86,10 @@ export default function Home() {
   }
   function speak(){if(!current)return; speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(current.word);u.lang='en-GB';u.rate=.86;speechSynthesis.speak(u)}
   function checkAnswer(){if(!answer.trim())return;setRevealed(true)}
+  function choosePlanOption(option:string,correct:boolean){if(revealed)return;setChoiceSelected(option);setRevealed(true);window.setTimeout(()=>rate(correct?'known':'hard',true),700)}
+  function submitPlanSpelling(){if(!current||!answer.trim()||revealed)return;const correct=answer.trim().toLowerCase()===current.word.toLowerCase();setRevealed(true);window.setTimeout(()=>rate(correct?'known':'again',true),850)}
+  function startAnotherGroup(){const size=Math.max(1,planIds.length||dailyTarget);const candidates=allWords.filter(w=>!planIds.includes(w.id)&&!records[w.id]?.passes?.[day()]?.includes('dictation')).slice(0,size).map(w=>w.id);if(!candidates.length){setMode('checkin');return}setPlanIds(candidates);localStorage.setItem(`ielts-plan-${day()}`,JSON.stringify(candidates));setPlanRound(0);setIndex(0);setRevealed(false);setAnswer('');setChoiceSelected('')}
+  function finishCheckin(){const entry={date:day(),completed:planIds.length,mastered:planMastered,reinforce:planReinforce};let history:typeof entry[]=[];try{history=JSON.parse(localStorage.getItem('ielts-checkins')||'[]')}catch{}localStorage.setItem('ielts-checkins',JSON.stringify([...history.filter(v=>v.date!==entry.date),entry]));setMode('checkin')}
   function toggleSaved(){ if(!current)return; const old=records[current.id]||{stage:0,next:day(),last:day(),rating:'again' as const}; setRecords(v=>({...v,[current.id]:{...old,saved:!old.saved}})); }
   function chooseList(n:number){setActiveList(n);setMode('learn');setQuery('');setShowLists(false)}
   function exportData(){const blob=new Blob([JSON.stringify(records,null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`词穹学习记录-${day()}.json`;a.click();URL.revokeObjectURL(a.href)}
@@ -94,14 +100,14 @@ export default function Home() {
       <button className="brand" onClick={()=>{setMode('learn');setQuery('')}} aria-label="回到学习首页"><span>词穹</span><i>VOCABULARY</i></button>
       <nav>
         <button className={mode==='learn'?'active':''} onClick={()=>setMode('learn')}>学习</button>
-        <button className={mode==='plan'?'active':''} onClick={()=>setMode('plan')}>今日计划</button>
+        <button className={mode==='plan'||mode==='checkin'?'active':''} onClick={()=>setMode('plan')}>今日计划</button>
         <button className={mode==='review'?'active':''} onClick={()=>setMode('review')}>今日复习 <b>{due}</b></button>
         <button className={mode==='saved'?'active':''} onClick={()=>setMode('saved')}>收藏</button>
       </nav>
       <button className="data-btn" onClick={()=>setShowData(true)}>记录 · {progress}%</button>
     </header>
 
-    {mode!=='plan'&&<section className="hero">
+    {mode!=='plan'&&mode!=='checkin'&&<section className="hero">
       <div className="hero-copy">
         <p className="eyebrow">IELTS · 64 LISTS · {allWords.length.toLocaleString()} WORDS</p>
         <h1>让每一个词，<br/><em>在恰好的时间重逢。</em></h1>
@@ -114,7 +120,16 @@ export default function Home() {
       </div>
     </section>}
 
-    <section className={`workspace ${mode==='plan'?'plan-only':''}`}>
+    {mode==='checkin'&&<section className="checkin-page">
+      <div className="checkin-mark">✓</div>
+      <p className="eyebrow">DAILY CHECK-IN · {day()}</p>
+      <h1>今天的学习，<br/>已经记下来了。</h1>
+      <p>完成三轮训练比一次记住所有单词更重要。明天会继续安排需要强化的内容。</p>
+      <div className="checkin-stats"><div><strong>{planIds.length}</strong><span>本组完成</span></div><div><strong>{planMastered}</strong><span>已经掌握</span></div><div><strong>{planReinforce}</strong><span>需要强化</span></div></div>
+      <button onClick={()=>setMode('learn')}>返回学习首页</button>
+    </section>}
+
+    {mode!=='checkin'&&<section className={`workspace ${mode==='plan'?'plan-only':''}`}>
       {mode!=='plan'&&<aside>
         <label className="search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索单词或释义"/></label>
         <button className="list-pick" onClick={()=>setShowLists(true)}><span><small>当前章节</small><b>List {activeList}</b></span><i>选择 List →</i></button>
@@ -140,22 +155,22 @@ export default function Home() {
           {activeDrill==='recognize' ? <><h2>{current.word}</h2>{current.phonetic&&<p className="phonetic">{current.phonetic}</p>}<button className="sound" onClick={e=>{e.stopPropagation();speak()}}>↗ <span>{mode==='plan'?'已自动播放 · 再听一次':'听发音'}</span></button><div className="definition"><small>释义</small><p>{current.definition||'释义待校对'}</p></div></> : activeDrill==='recall'&&mode==='plan'?<>
             <div className="prompt-label">{choiceIsCnToEn?'中译英 · 选择单词':'英译中 · 选择释义'}</div>
             <p className={`choice-prompt ${choiceIsCnToEn?'cn':''}`}>{choiceIsCnToEn?current.definition:current.word}</p>
-            <div className="choice-grid" onClick={e=>e.stopPropagation()}>{choiceOptions.map((option,i)=>{const correct=option===(choiceIsCnToEn?current.word:current.definition);return <button key={`${option}-${i}`} className={revealed?(correct?'correct':choiceSelected===option?'wrong':''):''} disabled={revealed} onClick={()=>{setChoiceSelected(option);setRevealed(true)}}><i>{String.fromCharCode(65+i)}</i><span>{option}</span></button>})}</div>
+            <div className="choice-grid" onClick={e=>e.stopPropagation()}>{choiceOptions.map((option,i)=>{const correct=option===(choiceIsCnToEn?current.word:current.definition);return <button key={`${option}-${i}`} className={revealed?(correct?'correct':choiceSelected===option?'wrong':''):''} disabled={revealed} onClick={()=>choosePlanOption(option,correct)}><i>{String.fromCharCode(65+i)}</i><span>{option}</span></button>})}</div>
           </> : <>
             <div className="prompt-label">{activeDrill==='dictation'?'听音拼写':'根据释义回想单词'}</div>
             {activeDrill==='dictation'?<button className="listen-orb" onClick={e=>{e.stopPropagation();speak()}} aria-label="播放发音">▶</button>:<p className="meaning-prompt">{current.definition||'释义待校对'}</p>}
-            <form className="answer-box" onClick={e=>e.stopPropagation()} onSubmit={e=>{e.preventDefault();checkAnswer()}}><input autoCapitalize="none" autoComplete="off" spellCheck={false} value={answer} onChange={e=>setAnswer(e.target.value)} placeholder="输入英文单词"/><button>确认</button></form>
-            {revealed&&<div className={`answer-result ${answer.trim().toLowerCase()===current.word.toLowerCase()?'correct':''}`}><small>{answer.trim().toLowerCase()===current.word.toLowerCase()?'拼写正确':'正确答案'}</small><b>{current.word}</b>{current.phonetic&&<span>{current.phonetic}</span>}</div>}
+            <form className="answer-box" onClick={e=>e.stopPropagation()} onSubmit={e=>{e.preventDefault();mode==='plan'?submitPlanSpelling():checkAnswer()}}><input autoFocus={mode==='plan'} autoCapitalize="none" autoComplete="off" spellCheck={false} value={answer} onChange={e=>setAnswer(e.target.value)} placeholder={mode==='plan'?'输入后按回车':'输入英文单词'}/>{mode!=='plan'&&<button>确认</button>}</form>
+            {revealed&&<div className={`answer-result ${answer.trim().toLowerCase()===current.word.toLowerCase()?'correct':'incorrect'}`}><small>{answer.trim().toLowerCase()===current.word.toLowerCase()?'拼写正确':'拼写错误 · 正确答案'}</small>{answer.trim().toLowerCase()!==current.word.toLowerCase()&&<em>你的答案：{answer}</em>}<b>{current.word}</b>{current.phonetic&&<span>{current.phonetic}</span>}</div>}
           </>}
           {!revealed&&activeDrill==='recognize'&&<div className="reveal">点击查看释义 <span>SPACE</span></div>}
-        </article> : <div className="empty"><b>{mode==='plan'&&planRound===2?'今天的三轮训练已完成':mode==='plan'?'正在进入下一轮':mode==='review'?'今天已经复习完成':'这里还没有单词'}</b><p>{mode==='plan'&&planRound===2?'做得很好，明天会根据今天的结果安排复习。':mode==='plan'?'准备下一种训练方式。':mode==='review'?'去学几个新词，明天再回来。':'换一个 List 或搜索试试。'}</p></div>}
-        {current&&mode==='plan'?<div className="plan-next"><button disabled={!revealed} onClick={()=>rate(activeDrill==='dictation'&&answer.trim().toLowerCase()!==current.word.toLowerCase()?'again':activeDrill==='recall'&&choiceSelected!==(choiceIsCnToEn?current.word:current.definition)?'hard':'known')}>{activeDrill==='dictation'?(activeWords.length===1?'完成今日训练':'提交并继续'):planRound===1?'下一题':'认识了，继续'} <span>→</span></button></div>:current&&<div className={`ratings ${!revealed?'waiting':''}`}>
+        </article> : mode==='plan'&&planRound===2?<section className="plan-complete"><small>本组三轮已完成</small><h2>这一组，完成了。</h2><p>答错的词已经自动进入强化复习，不需要现在一次记牢。</p><div><span><strong>{planMastered}</strong> 已掌握</span><span><strong>{planReinforce}</strong> 需强化</span></div><h3>还要继续来一组吗？</h3><div className="plan-complete-actions"><button onClick={startAnotherGroup}>继续一组</button><button className="primary" onClick={finishCheckin}>完成并打卡</button></div></section>:<div className="empty"><b>{mode==='plan'?'正在进入下一轮':mode==='review'?'今天已经复习完成':'这里还没有单词'}</b><p>{mode==='plan'?'准备下一种训练方式。':mode==='review'?'去学几个新词，明天再回来。':'换一个 List 或搜索试试。'}</p></div>}
+        {current&&mode==='plan'&&activeDrill==='recognize'?<div className="plan-next"><button disabled={!revealed} onClick={()=>rate('known')}>认识了，继续 <span>→</span></button></div>:current&&mode!=='plan'&&<div className={`ratings ${!revealed?'waiting':''}`}>
           <button disabled={!revealed} onClick={()=>rate('again')}><kbd>1</kbd><span>生疏<small>10 分钟后</small></span></button>
           <button disabled={!revealed} onClick={()=>rate('hard')}><kbd>2</kbd><span>模糊<small>明天复习</small></span></button>
           <button disabled={!revealed} className="primary" onClick={()=>rate('known')}><kbd>3</kbd><span>认识<small>{`约 ${intervals[Math.min(6,(records[current.id]?.stage||0)+1)]} 天后`}</small></span></button>
         </div>}
       </div>
-    </section>
+    </section>}
 
     <footer><span>词穹 · 你的雅思词汇记忆空间</span><span>记录仅保存在当前浏览器 · 建议定期导出</span></footer>
 
