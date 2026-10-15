@@ -138,6 +138,10 @@ export default function Home() {
         <h1>让每一个词，<br/><em>在恰好的时间重逢。</em></h1>
         <p className="intro">依据艾宾浩斯记忆节奏安排复习。无需登录，进度安静地保存在你的浏览器里。</p>
       </div>
+      <div className="hero-visual" aria-hidden="true">
+        <img src={`${import.meta.env.BASE_URL||'/'}home-mountain.jpg`} alt="" width="1080" height="1922" fetchPriority="high"/>
+        <span>向上生长，也向内沉静。</span>
+      </div>
       <div className="stats">
         <div><strong>{due}</strong><span>今日待复习</span></div>
         <div><strong>{learned}</strong><span>已经掌握</span></div>
