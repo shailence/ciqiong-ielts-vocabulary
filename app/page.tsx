@@ -155,7 +155,7 @@ export default function Home() {
 
     {mode==='home'&&<section className="immersive-home" style={{backgroundImage:`url(${import.meta.env.BASE_URL||'/'}home-mountain.png)`}}>
       <div className="home-shade"/>
-      <div className="home-heading"><p>IELTS · 22 THEMES · 64 LISTS</p><h1>词穹</h1><span>在雪山与湖泊之间，把 3,693 个词变成长期记忆。</span></div>
+      <div className="home-heading"><p>IELTS · 22 THEMES · 64 LISTS · 3,693 WORDS</p><h1>让每一个单词，<br/>都成为抵达远方的力量。</h1><span>从主题词汇到阅读语境，让记忆不止于背诵。</span></div>
       <div className="glass-bento" aria-label="今日学习面板">
         <GlassCard variant="dark" className="today-card" onClick={openTodayPlan}><small>今日学习</small><strong>{todayCheckin?'已完成':'开始三轮训练'}</strong><p>{todayCheckin?'今日打卡已经保存。':`${dailyTarget} 个词 · 认识、辨义、听写`}</p><span>{todayCheckin?'查看今日总结':'开始学习 →'}</span></GlassCard>
         <GlassCard className="calendar-card">
