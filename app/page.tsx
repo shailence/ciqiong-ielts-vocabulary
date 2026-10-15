@@ -8,6 +8,7 @@ import type { AppStateV2, Checkin, Drill, ListTheme, RecordItem, Records, Vocabu
 
 type Word = { id: string; order: number; word: string; definition: string; phonetic?: string };
 type VocabList = { number: number; title: string; words: Word[] };
+type ViewMode = "home"|"learn"|"review"|"saved"|"plan"|"checkin";
 const drillOrder:Drill[]=["recognize","recall","dictation"];
 const planLabels=["认识与听音","四选一辨义","听音拼写"];
 
@@ -32,7 +33,7 @@ export default function Home() {
   const [index,setIndex]=useState(0);
   const [revealed,setRevealed]=useState(false);
   const [query,setQuery]=useState("");
-  const [mode,setMode]=useState<"learn"|"review"|"saved"|"plan"|"checkin">("learn");
+  const [mode,setMode]=useState<ViewMode>("home");
   const [showLists,setShowLists]=useState(false);
   const [showData,setShowData]=useState(false);
   const [drill,setDrill]=useState<Drill>("recognize");
@@ -84,6 +85,7 @@ export default function Home() {
   const learned=Object.values(records).filter(r=>r.rating==='known').length;
   const due=allWords.filter(w=>records[w.id]&&isDue(records[w.id].next)).length;
   const progress=allWords.length?Math.round(Object.keys(records).length/allWords.length*100):0;
+  const completedToday=checkins.some(entry=>entry.date===day());
   const choiceIsCnToEn=!!current&&current.order%2===0;
   const choiceOptions=useMemo(()=>{if(!current)return[];const pool=allWords.filter(w=>w.id!==current.id);const picked=[0,1,2].map(i=>pool[(current.order*37+i*193)%Math.max(pool.length,1)]).filter(Boolean);return [current,...picked].sort((a,b)=>((a.order*17)%11)-((b.order*17)%11)).map(w=>choiceIsCnToEn?w.word:w.definition)},[current,allWords,choiceIsCnToEn]);
   const planMastered=planIds.filter(id=>records[id]?.rating==='known').length;
@@ -122,21 +124,22 @@ export default function Home() {
 
   return <main>
     <header className="topbar">
-      <button className="brand" onClick={()=>{setMode('learn');setQuery('')}} aria-label="回到学习首页"><span>词穹</span><i>VOCABULARY</i></button>
+      <button className="brand" onClick={()=>{setMode('home');setQuery('')}} aria-label="回到首页"><span>词穹</span><i>VOCABULARY</i></button>
       <nav>
-        <button className={mode==='learn'?'active':''} onClick={()=>setMode('learn')}>学习</button>
+        <button className={mode==='home'?'active':''} onClick={()=>setMode('home')}>首页</button>
+        <button className={mode==='learn'?'active':''} onClick={()=>setMode('learn')}>词库学习</button>
         <button className={mode==='plan'||mode==='checkin'?'active':''} onClick={openTodayPlan}>今日计划 {todayCheckin&&<b className="checked">✓</b>}</button>
         <button className={mode==='review'?'active':''} onClick={()=>setMode('review')}>今日复习 <b>{due}</b></button>
-        <button className={mode==='saved'?'active':''} onClick={()=>setMode('saved')}>收藏</button>
       </nav>
       <button className="data-btn" onClick={()=>setShowData(true)}>记录 · {progress}%</button>
     </header>
 
-    {mode!=='plan'&&mode!=='checkin'&&<section className="hero">
+    {mode==='home'&&<><section className="hero">
       <div className="hero-copy">
         <p className="eyebrow">IELTS · 64 LISTS · {allWords.length.toLocaleString()} WORDS</p>
         <h1>让每一个词，<br/><em>在恰好的时间重逢。</em></h1>
         <p className="intro">依据艾宾浩斯记忆节奏安排复习。无需登录，进度安静地保存在你的浏览器里。</p>
+        <div className="hero-actions"><button onClick={openTodayPlan}>开始今日计划 <span>→</span></button><button onClick={()=>setMode('learn')}>浏览主题词库</button></div>
       </div>
       <div className="hero-visual" aria-hidden="true">
         <img src={`${import.meta.env.BASE_URL||'/'}home-mountain.jpg`} alt="" width="1080" height="1922" fetchPriority="high"/>
@@ -147,7 +150,15 @@ export default function Home() {
         <div><strong>{learned}</strong><span>已经掌握</span></div>
         <div><strong>{todayDone}<small>/ {dailyTarget}</small></strong><span>今日学习目标</span></div>
       </div>
-    </section>}
+    </section>
+    <section className="home-grid" aria-label="学习概览">
+      <button className="home-card home-card-primary" onClick={openTodayPlan}><small>今日计划</small><strong>{todayCheckin?'今日已完成':`${dailyTarget} 个词`}</strong><p>{todayCheckin?'绿色打卡已保存，明天继续。':'三轮训练：认识、辨义、听写。'}</p><span>{todayCheckin?'查看记录':'开始训练 →'}</span></button>
+      <button className="home-card" onClick={()=>setMode('review')}><small>到期复习</small><strong>{due}</strong><p>根据每个单词的记忆阶段自动安排。</p><span>{due?'进入复习 →':'今日已清空'}</span></button>
+      <button className="home-card" onClick={()=>setMode('learn')}><small>主题词库</small><strong>22 个主题</strong><p>64 个 List 保留原书章节与学习顺序。</p><span>选择主题 →</span></button>
+      <button className="home-card home-card-progress" onClick={()=>setShowData(true)}><small>总学习进度</small><strong>{progress}%</strong><div><i style={{width:`${progress}%`}}/></div><p>{Object.keys(records).length.toLocaleString()} / {allWords.length.toLocaleString()} 个词已有记录</p><span>管理数据 →</span></button>
+      <button className="home-card home-card-saved" onClick={()=>setMode('saved')}><small>我的收藏</small><strong>{allWords.filter(word=>records[word.id]?.saved).length}</strong><p>集中回看主动收藏的重点词。</p><span>打开收藏 →</span></button>
+      <div className="home-card home-card-checkin"><small>学习状态</small><strong>{completedToday?'✓ 已打卡':'保持节奏'}</strong><p>{checkins.length?`已经留下 ${checkins.length} 天打卡记录。`:'完成今日三轮训练后生成第一张打卡。'}</p><span>{day()}</span></div>
+    </section></>}
 
     {mode==='checkin'&&<section className="checkin-page">
       <div className="checkin-mark" aria-label="今日打卡成功">✓</div>
@@ -156,10 +167,10 @@ export default function Home() {
       <p>完成三轮训练比一次记住所有单词更重要。明天会继续安排需要强化的内容。</p>
       <div className="checkin-stats"><div><strong>{todayCheckin?.completed??planIds.length}</strong><span>本组完成</span></div><div><strong>{todayCheckin?.mastered??planMastered}</strong><span>已经掌握</span></div><div><strong>{todayCheckin?.reinforce??planReinforce}</strong><span>需要强化</span></div></div>
       <div className="checkin-confirmed"><span>✓</span> 已保存到今日记录</div>
-      <button onClick={()=>setMode('learn')}>返回学习首页</button>
+      <button onClick={()=>setMode('home')}>返回首页</button>
     </section>}
 
-    {mode!=='checkin'&&<section className={`workspace ${mode==='plan'?'plan-only':''}`}>
+    {mode!=='home'&&mode!=='checkin'&&<section className={`workspace ${mode==='plan'?'plan-only':''}`}>
       {mode!=='plan'&&<aside>
         <label className="search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索单词或释义"/></label>
         <button className="list-pick" onClick={()=>setShowLists(true)}><span><small>当前章节 · List {activeList}</small><b>{activeTheme?.themeZh||`List ${activeList}`}</b></span><i>选择 List →</i></button>
@@ -212,6 +223,12 @@ export default function Home() {
     </section>}
 
     <footer><span>词穹 · 你的雅思词汇记忆空间</span><span>记录仅保存在当前浏览器 · 建议定期导出</span></footer>
+    <nav className="mobile-nav" aria-label="移动端主导航">
+      <button className={mode==='home'?'active':''} onClick={()=>setMode('home')}><b>⌂</b><span>首页</span></button>
+      <button className={mode==='learn'||mode==='saved'?'active':''} onClick={()=>setMode('learn')}><b>文</b><span>词库</span></button>
+      <button className={mode==='plan'||mode==='checkin'?'active':''} onClick={openTodayPlan}><b>{todayCheckin?'✓':'◉'}</b><span>计划</span></button>
+      <button className={mode==='review'?'active':''} onClick={()=>setMode('review')}><b>{due||'↻'}</b><span>复习</span></button>
+    </nav>
 
     {showLists&&<div className="overlay" onClick={()=>setShowLists(false)}><section className="panel list-panel" onClick={e=>e.stopPropagation()}><div className="panel-head"><div><small>全部词库 · 22 个主题</small><h3>按原书主题选择 List</h3></div><button onClick={()=>setShowLists(false)}>×</button></div><div className="list-grid">{lists.map(l=>{const done=l.words.filter(w=>records[w.id]).length;const theme=themes.find(item=>item.list===l.number);return <button key={l.number} onClick={()=>chooseList(l.number)}><span>LIST {String(l.number).padStart(2,'0')} · {l.words.length} 词</span><b>{theme?.themeZh||'主题待核对'}</b><small>{theme?.themeEn||''}</small><i style={{width:`${l.words.length?done/l.words.length*100:0}%`}}/></button>})}</div></section></div>}
     {showData&&<div className="overlay" onClick={()=>setShowData(false)}><section className="panel data-panel" onClick={e=>e.stopPropagation()}><div className="panel-head"><div><small>学习记录</small><h3>把进度带在身边</h3></div><button onClick={()=>setShowData(false)}>×</button></div><p>学习记录只存在这台设备的浏览器中。你可以导出备份，再在另一台设备上导入。</p><div className="data-actions"><button className="primary-action" onClick={exportData}>导出记录</button><button onClick={()=>fileRef.current?.click()}>导入记录</button><input ref={fileRef} type="file" accept="application/json" hidden onChange={importData}/></div></section></div>}
