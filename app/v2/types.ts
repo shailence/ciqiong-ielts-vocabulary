@@ -35,6 +35,15 @@ export type ListTheme = {
 
 export type VocabularyExtension = {
   wordId: string;
+  chapterId?: string;
+  chapterTitle?: string;
+  listId?: number;
+  mnemonic?: string;
+  relatedWords?: string[];
+  exampleEnglish?: string;
+  exampleChinese?: string;
+  exampleSource?: string;
+  contentStatus?: string;
   partOfSpeech: string[];
   memoryAid?: { kind: string; noteZh: string; caution?: string };
   relations: Array<{ label: string; type: string; targetWordId?: string; isExtension: boolean; noteZh?: string }>;

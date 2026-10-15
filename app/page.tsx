@@ -16,6 +16,11 @@ const planLabels=["认识与听音","四选一辨义","听音拼写"];
 const intervals = REVIEW_INTERVALS;
 const day = () => localDateKey();
 
+function GlassCard({variant="light",className="",onClick,children}:{variant?:"light"|"dark";className?:string;onClick?:()=>void;children:React.ReactNode}) {
+  const classes=`glass-card glass-card--${variant} ${className}`;
+  return onClick?<button className={classes} onClick={onClick}>{children}</button>:<div className={classes}>{children}</div>;
+}
+
 function HighlightTarget({text,target}:{text:string;target:string}) {
   const index=text.toLowerCase().indexOf(target.toLowerCase());
   if(index<0)return text;
@@ -111,7 +116,7 @@ export default function Home() {
     const old=records[current.id]; let stage=old?.stage||0;
     const elapsed=Math.max(1,Math.min(120,Math.round((Date.now()-interactionStarted.current)/1000)));
     setActivity(value=>{const date=day();const prior=value[date]||{attempts:0,learned:0,reviews:0,correct:0,seconds:0};return {...value,[date]:{attempts:prior.attempts+1,learned:prior.learned+(old?0:1),reviews:prior.reviews+(old?1:0),correct:prior.correct+(rating==='known'?1:0),seconds:prior.seconds+elapsed}}});interactionStarted.current=Date.now();
-    if(mode==='plan'&&activeDrill!=='dictation'){
+    if(mode==='plan'&&activeDrill==='recall'){
       const nextPasses=[...new Set([...currentPasses,activeDrill])];
       setRecords(v=>({...v,[current.id]:{...(v[current.id]||{}),stage,next:day(),last:day(),rating,planNew:true,passes:{...(v[current.id]?.passes||{}),[day()]:nextPasses}}}));
       setAnswer("");setChoiceSelected("");setRevealed(false);setShowExpansion(false);setIndex(0);return;
@@ -148,21 +153,21 @@ export default function Home() {
       <button className="data-btn" onClick={()=>setShowData(true)}>记录 · {progress}%</button>
     </header>
 
-    {mode==='home'&&<section className="immersive-home" style={{backgroundImage:`url(${import.meta.env.BASE_URL||'/'}home-mountain.jpg)`}}>
+    {mode==='home'&&<section className="immersive-home" style={{backgroundImage:`url(${import.meta.env.BASE_URL||'/'}home-mountain.png)`}}>
       <div className="home-shade"/>
       <div className="home-heading"><p>IELTS · 22 THEMES · 64 LISTS</p><h1>词穹</h1><span>在雪山与湖泊之间，把 3,693 个词变成长期记忆。</span></div>
       <div className="glass-bento" aria-label="今日学习面板">
-        <button className="glass-card today-card" onClick={openTodayPlan}><small>今日学习</small><strong>{todayCheckin?'已完成':'开始三轮训练'}</strong><p>{todayCheckin?'今日打卡已经保存。':`${dailyTarget} 个词 · 认识、辨义、听写`}</p><span>{todayCheckin?'查看今日总结':'开始学习 →'}</span></button>
-        <div className="glass-card calendar-card">
+        <GlassCard variant="dark" className="today-card" onClick={openTodayPlan}><small>今日学习</small><strong>{todayCheckin?'已完成':'开始三轮训练'}</strong><p>{todayCheckin?'今日打卡已经保存。':`${dailyTarget} 个词 · 认识、辨义、听写`}</p><span>{todayCheckin?'查看今日总结':'开始学习 →'}</span></GlassCard>
+        <GlassCard className="calendar-card">
           <header><div><small>学习日历</small><strong>{monthLabel}</strong></div><div><button aria-label="上个月" onClick={()=>setCalendarMonth(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1))}>‹</button><button aria-label="下个月" onClick={()=>setCalendarMonth(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1))}>›</button></div></header>
           <div className="calendar-week">{['一','二','三','四','五','六','日'].map(label=><span key={label}>{label}</span>)}</div>
           <div className="calendar-days">{calendarCells.map((date,index)=>date?<button key={date} className={`${date===day()?'today':''} ${selectedDate===date?'selected':''} ${checkins.some(item=>item.date===date)?'complete':''}`} onClick={()=>setSelectedDate(date)}><span>{Number(date.slice(-2))}</span>{(activity[date]?.attempts||Object.values(records).some(record=>record.last===date))&&<i/>}</button>:<i key={`blank-${index}`}/>)}</div>
           <footer><span>{selectedDate}</span><b>{selectedCheckin?'✓ 已完成':`${selectedActivity.attempts||selectedLegacyCount} 次学习 · ${Math.ceil(selectedActivity.seconds/60)} 分钟`}</b><button onClick={()=>openView('records')}>完整记录 →</button></footer>
-        </div>
-        <button className="glass-card review-card" onClick={()=>openView('review')}><small>今日复习</small><strong>{due}</strong><p>{due?'到期词汇等待复习':'今天暂时没有到期任务'}</p><span>{due?'进入任务 →':'查看复习页'}</span></button>
-        <button className="glass-card theme-card" onClick={()=>{setActiveList(1);openView('learn')}}><small>正在学习的主题</small><strong>Chapter 01 · 自然地理</strong><p>Natural Geography · List 01–04</p><span>进入主题 →</span></button>
-        <div className="glass-card overview-card"><small>学习概览</small><div><span><b>{progress}%</b>总进度</span><span><b>{checkins.length}</b>打卡天数</span><span><b>{masteryRate}%</b>掌握率</span></div></div>
-        <div className="glass-card quick-card"><small>快捷入口</small><div><button onClick={()=>openView('saved')}>收藏 <b>{allWords.filter(word=>records[word.id]?.saved).length}</b></button><button onClick={()=>openView('review')}>错词 <b>{Object.values(records).filter(record=>record.rating==='again').length}</b></button><button onClick={()=>openView('records')}>记录 <b>→</b></button></div></div>
+        </GlassCard>
+        <GlassCard variant="dark" className="review-card" onClick={()=>openView('review')}><small>今日复习</small><strong>{due}</strong><p>{due?'到期词汇等待复习':'今天暂时没有到期任务'}</p><span>{due?'进入任务 →':'查看复习页'}</span></GlassCard>
+        <GlassCard className="theme-card" onClick={()=>{setActiveList(1);openView('learn')}}><small>正在学习的主题</small><strong>Chapter 01 · 自然地理</strong><p>Natural Geography · List 01–04</p><span>进入主题 →</span></GlassCard>
+        <GlassCard className="overview-card"><small>学习概览</small><div><span><b>{progress}%</b>总进度</span><span><b>{checkins.length}</b>打卡天数</span><span><b>{masteryRate}%</b>掌握率</span></div></GlassCard>
+        <GlassCard className="quick-card"><small>快捷入口</small><div><button onClick={()=>openView('saved')}>收藏 <b>{allWords.filter(word=>records[word.id]?.saved).length}</b></button><button onClick={()=>openView('review')}>错词 <b>{Object.values(records).filter(record=>record.rating==='again').length}</b></button><button onClick={()=>openView('records')}>记录 <b>→</b></button></div></GlassCard>
       </div>
     </section>}
 
@@ -201,7 +206,7 @@ export default function Home() {
           <button className={activeDrill==='dictation'?'active':''} onClick={()=>{setDrill('dictation');setTimeout(speak,80)}}><b>听音</b><small>拼写单词</small></button>
         </div>}
         <div className="study-head"><span>{query?'搜索结果':mode==='review'?'今日复习任务':mode==='saved'?'我的收藏':mode==='plan'?`第 ${planRound+1} 轮 · ${planLabels[planRound]}`:`CHAPTER ${String(activeTheme?.chapterNumbers[0]||1).padStart(2,'0')} · ${activeTheme?.themeZh||''} · LIST ${activeList}`}</span><span>{mode==='plan'?`本轮剩余 ${activeWords.length}`:activeWords.length?`${index+1} / ${activeWords.length}`:'0 / 0'}</span></div>
-        {current ? <article key={`${current.id}-${activeDrill}`} className={`word-card ${revealed?'revealed':''} ${showExpansion?'expanded':''}`} onClick={()=>activeDrill==='recognize'&&setRevealed(true)}>
+        {current ? <article key={`${current.id}-${activeDrill}`} className={`word-card ${revealed?'revealed expanded':''}`}>
           <button className={`save ${records[current.id]?.saved?'saved':''}`} onClick={e=>{e.stopPropagation();toggleSaved()}} aria-label="收藏单词">{records[current.id]?.saved?'★':'☆'}</button>
           <div className="number">{String(current.order).padStart(2,'0')} <span>· LIST {current.list}</span></div>
           {activeDrill==='recognize' ? <><h2>{current.word}</h2>{current.phonetic&&<p className="phonetic">{current.phonetic}</p>}<button className="sound" onClick={e=>{e.stopPropagation();speak()}}>↗ <span>{mode==='plan'?'已自动播放 · 再听一次':'听发音'}</span></button><div className="definition"><small>释义</small><p>{current.definition||'释义待校对'}</p></div></> : activeDrill==='recall'&&mode==='plan'?<>
@@ -214,21 +219,20 @@ export default function Home() {
             <form className="answer-box" onClick={e=>e.stopPropagation()} onSubmit={e=>{e.preventDefault();mode==='plan'?submitPlanSpelling():checkAnswer()}}><input autoFocus={mode==='plan'} autoCapitalize="none" autoComplete="off" spellCheck={false} value={answer} onChange={e=>setAnswer(e.target.value)} placeholder={mode==='plan'?'输入后按回车':'输入英文单词'}/>{mode!=='plan'&&<button>确认</button>}</form>
             {revealed&&<div className={`answer-result ${answer.trim().toLowerCase()===current.word.toLowerCase()?'correct':'incorrect'}`}><small>{answer.trim().toLowerCase()===current.word.toLowerCase()?'拼写正确':'拼写错误 · 正确答案'}</small>{answer.trim().toLowerCase()!==current.word.toLowerCase()&&<em>你的答案：{answer}</em>}<b>{current.word}</b>{current.phonetic&&<span>{current.phonetic}</span>}</div>}
           </>}
-          {!revealed&&activeDrill==='recognize'&&<div className="reveal">点击查看释义 <span>SPACE</span></div>}
+          {!revealed&&activeDrill==='recognize'&&<button className="reveal" onClick={()=>setRevealed(true)}>查看释义 <span>SPACE</span></button>}
           {revealed&&currentExtension&&activeDrill==='recognize'&&<div className="extension-shell" onClick={event=>event.stopPropagation()}>
-            <button className="extension-toggle" aria-expanded={showExpansion} onClick={()=>setShowExpansion(value=>!value)}><span>拓展记忆 · {currentExtension.partOfSpeech.join(' / ')}</span><b>{showExpansion?'收起':'展开'} {showExpansion?'↑':'↓'}</b></button>
-            {showExpansion&&<div className="extension-content">
-              {currentExtension.memoryAid&&<section><small>联想记忆</small><p>{currentExtension.memoryAid.noteZh}</p></section>}
-              <section><small>同主题关联</small><div className="relation-chips">{currentExtension.relations.map(relation=><button key={`${relation.label}-${relation.type}`} disabled={relation.isExtension} onClick={()=>relation.targetWordId&&openRelatedWord(relation.targetWordId)}><span>{relation.label}</span><i>{relation.isExtension?'扩展词':'查看 →'}</i></button>)}</div></section>
+            <div className="extension-content">
+              {currentExtension.memoryAid&&<section className="memory-card"><small>联想记忆</small><p>{currentExtension.memoryAid.noteZh}</p></section>}
+              <section className="relation-card"><small>主题关联</small><div className="relation-chips">{currentExtension.relations.map(relation=><button key={`${relation.label}-${relation.type}`} disabled={relation.isExtension} onClick={()=>relation.targetWordId&&openRelatedWord(relation.targetWordId)}><span>{relation.label}</span><i>{relation.isExtension?'扩展词':'查看 →'}</i></button>)}</div></section>
               <section><small>高频搭配</small><div className="collocations">{currentExtension.collocations.map(item=><p key={item.text}><b>{item.text}</b><span>{item.translationZh}</span></p>)}</div></section>
               <section className="context-example"><small>原创雅思风格例句</small><p><HighlightTarget text={currentExtension.example.text} target={currentExtension.example.target}/></p><em>{currentExtension.example.translationZh}</em><div className="example-source">{currentExtension.example.copyrightStatus} · {currentExtension.provenance.reviewStatus} · {currentExtension.provenance.updatedAt}</div></section>
-            </div>}
+            </div>
           </div>}
         </article> : mode==='plan'&&planRound===2?<section className="plan-complete"><small>本组三轮已完成</small><h2>这一组，完成了。</h2><p>答错的词已经自动进入强化复习，不需要现在一次记牢。</p><div><span><strong>{planMastered}</strong> 已掌握</span><span><strong>{planReinforce}</strong> 需强化</span></div><h3>还要继续来一组吗？</h3><div className="plan-complete-actions"><button onClick={startAnotherGroup}>继续一组</button><button className="primary" onClick={finishCheckin}>完成并打卡</button></div></section>:<div className="empty"><b>{mode==='plan'?'正在进入下一轮':mode==='review'?'今天已经复习完成':'这里还没有单词'}</b><p>{mode==='plan'?'准备下一种训练方式。':mode==='review'?'去学几个新词，明天再回来。':'换一个 List 或搜索试试。'}</p></div>}
-        {current&&mode==='plan'&&activeDrill==='recognize'?<div className="plan-next"><button disabled={!revealed} onClick={()=>rate('known')}>认识了，继续 <span>→</span></button></div>:current&&mode!=='plan'&&<div className={`ratings ${!revealed?'waiting':''}`}>
-          <button disabled={!revealed} onClick={()=>rate('again')}><kbd>1</kbd><span>生疏<small>10 分钟后</small></span></button>
+        {current&&activeDrill==='recognize'&&<div className={`ratings ${!revealed?'waiting':''}`}>
+          <button disabled={!revealed} onClick={()=>rate('again')}><kbd>1</kbd><span>不认识<small>10 分钟后</small></span></button>
           <button disabled={!revealed} onClick={()=>rate('hard')}><kbd>2</kbd><span>模糊<small>明天复习</small></span></button>
-          <button disabled={!revealed} className="primary" onClick={()=>rate('known')}><kbd>3</kbd><span>认识<small>{`约 ${intervals[Math.min(6,(records[current.id]?.stage||0)+1)]} 天后`}</small></span></button>
+          <button disabled={!revealed} className="primary" onClick={()=>rate('known')}><kbd>3</kbd><span>已掌握<small>{`约 ${intervals[Math.min(6,(records[current.id]?.stage||0)+1)]} 天后`}</small></span></button>
         </div>}
       </div>
     </section>}

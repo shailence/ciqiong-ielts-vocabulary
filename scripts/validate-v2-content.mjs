@@ -23,6 +23,7 @@ assert.deepEqual(
 assert.equal(demo.entries.length, 30, "示范内容必须恰好包含 30 个词条");
 assert.equal(new Set(demo.entries.map((entry) => entry.wordId)).size, 30, "示范词条不得重复");
 assert.equal(demo.demoGroups.length, 3, "示范内容必须包含三个主题");
+assert.deepEqual(demo.demoGroups[0].wordIds, lists[0].words.slice(0, 10).map((word) => word.id), "Chapter 01 示例必须使用 List 01 前 10 个真实词条");
 
 const demoIds = new Set(demo.entries.map((entry) => entry.wordId));
 for (const group of demo.demoGroups) {
@@ -41,6 +42,10 @@ for (const entry of demo.entries) {
   assert(entry.example.text.toLowerCase().includes(entry.example.target.toLowerCase()), `${entry.wordId} 例句未包含目标词`);
   assert(entry.provenance?.reviewStatus, `${entry.wordId} 缺少审核状态`);
   assert(entry.provenance?.updatedAt, `${entry.wordId} 缺少更新时间`);
+  assert(entry.chapterId && entry.chapterTitle && entry.listId, `${entry.wordId} 缺少章节或 List 字段`);
+  assert(entry.mnemonic && entry.relatedWords?.length, `${entry.wordId} 缺少独立拓展字段`);
+  assert(entry.exampleEnglish && entry.exampleChinese && entry.exampleSource, `${entry.wordId} 缺少例句扁平字段`);
+  assert(entry.contentStatus, `${entry.wordId} 缺少内容审核状态`);
 
   for (const relation of entry.relations) {
     if (!relation.isExtension) {
