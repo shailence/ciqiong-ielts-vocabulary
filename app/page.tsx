@@ -8,7 +8,8 @@ import type { AppStateV2, Checkin, Drill, ListTheme, RecordItem, Records, Vocabu
 
 type Word = { id: string; order: number; word: string; definition: string; phonetic?: string };
 type VocabList = { number: number; title: string; words: Word[] };
-type ViewMode = "home"|"learn"|"review"|"saved"|"plan"|"checkin";
+type ViewMode = "home"|"learn"|"review"|"saved"|"plan"|"checkin"|"records";
+type ActivityDay = { attempts:number; learned:number; reviews:number; correct:number; seconds:number };
 const drillOrder:Drill[]=["recognize","recall","dictation"];
 const planLabels=["认识与听音","四选一辨义","听音拼写"];
 
@@ -29,6 +30,9 @@ export default function Home() {
   const [checkins,setCheckins]=useState<Checkin[]>([]);
   const [dailyPlans,setDailyPlans]=useState<Record<string,string[]>>({});
   const [hydrated,setHydrated]=useState(false);
+  const [activity,setActivity]=useState<Record<string,ActivityDay>>({});
+  const [calendarMonth,setCalendarMonth]=useState(()=>new Date(new Date().getFullYear(),new Date().getMonth(),1));
+  const [selectedDate,setSelectedDate]=useState(day());
   const [activeList,setActiveList]=useState(1);
   const [index,setIndex]=useState(0);
   const [revealed,setRevealed]=useState(false);
@@ -46,6 +50,7 @@ export default function Home() {
   const [todayCheckin,setTodayCheckin]=useState<Checkin|null>(null);
   const [showExpansion,setShowExpansion]=useState(false);
   const fileRef=useRef<HTMLInputElement>(null);
+  const interactionStarted=useRef(Date.now());
 
   useEffect(()=>{
     Promise.all([
@@ -54,14 +59,14 @@ export default function Home() {
       fetch(`${import.meta.env.BASE_URL||'/'}data/vocab-expansions.demo.v1.json`).then(r=>r.json()),
     ]).then(([vocab,themeData,extensionData])=>{setLists(vocab);setThemes(themeData.lists||[]);setExtensions(extensionData.entries||[])});
     const state=loadState(localStorage);
-    setRecords(state.records);setExamDate(state.settings.examDate);setCheckins(state.checkins);setDailyPlans(state.dailyPlans);
+    setRecords(state.records);setExamDate(state.settings.examDate);setCheckins(state.checkins);setDailyPlans(state.dailyPlans);setActivity((state.sessions.dailyActivity as Record<string,ActivityDay>)||{});
     setTodayCheckin(state.checkins.find(v=>v.date===day())||null);setHydrated(true);
   },[]);
   useEffect(()=>{
     if(!hydrated)return;
-    const state:AppStateV2={schemaVersion:2,records,settings:{examDate},checkins,dailyPlans,sessions:{},meta:{updatedAt:new Date().toISOString()}};
+    const state:AppStateV2={schemaVersion:2,records,settings:{examDate},checkins,dailyPlans,sessions:{dailyActivity:activity},meta:{updatedAt:new Date().toISOString()}};
     saveState(localStorage,state);
-  },[hydrated,records,examDate,checkins,dailyPlans]);
+  },[hydrated,records,examDate,checkins,dailyPlans,activity]);
 
   const allWords=useMemo(()=>lists.flatMap(l=>l.words.map(w=>({...w,list:l.number}))),[lists]);
   const activeTheme=themes.find(theme=>theme.list===activeList);
@@ -82,10 +87,15 @@ export default function Home() {
   const currentExtension=extensions.find(entry=>entry.wordId===current?.id);
   const currentPasses=current?(records[current.id]?.passes?.[day()]||[]):[];
   const activeDrill:Drill=mode==='plan'?drillOrder[planRound]:drill;
-  const learned=Object.values(records).filter(r=>r.rating==='known').length;
   const due=allWords.filter(w=>records[w.id]&&isDue(records[w.id].next)).length;
   const progress=allWords.length?Math.round(Object.keys(records).length/allWords.length*100):0;
-  const completedToday=checkins.some(entry=>entry.date===day());
+  const mastered=Object.values(records).filter(record=>record.rating==='known').length;
+  const masteryRate=Object.keys(records).length?Math.round(mastered/Object.keys(records).length*100):0;
+  const monthLabel=`${calendarMonth.getFullYear()} 年 ${calendarMonth.getMonth()+1} 月`;
+  const calendarCells=useMemo(()=>{const year=calendarMonth.getFullYear();const month=calendarMonth.getMonth();const first=(new Date(year,month,1).getDay()+6)%7;const count=new Date(year,month+1,0).getDate();return [...Array(first).fill(null),...Array.from({length:count},(_,i)=>localDateKey(new Date(year,month,i+1)))]},[calendarMonth]);
+  const selectedActivity=activity[selectedDate]||{attempts:0,learned:0,reviews:0,correct:0,seconds:0};
+  const selectedLegacyCount=Object.values(records).filter(record=>record.last===selectedDate).length;
+  const selectedCheckin=checkins.find(entry=>entry.date===selectedDate);
   const choiceIsCnToEn=!!current&&current.order%2===0;
   const choiceOptions=useMemo(()=>{if(!current)return[];const pool=allWords.filter(w=>w.id!==current.id);const picked=[0,1,2].map(i=>pool[(current.order*37+i*193)%Math.max(pool.length,1)]).filter(Boolean);return [current,...picked].sort((a,b)=>((a.order*17)%11)-((b.order*17)%11)).map(w=>choiceIsCnToEn?w.word:w.definition)},[current,allWords,choiceIsCnToEn]);
   const planMastered=planIds.filter(id=>records[id]?.rating==='known').length;
@@ -99,6 +109,8 @@ export default function Home() {
   function rate(rating:RecordItem['rating'],force=false){
     if(!current||(!revealed&&!force)) return;
     const old=records[current.id]; let stage=old?.stage||0;
+    const elapsed=Math.max(1,Math.min(120,Math.round((Date.now()-interactionStarted.current)/1000)));
+    setActivity(value=>{const date=day();const prior=value[date]||{attempts:0,learned:0,reviews:0,correct:0,seconds:0};return {...value,[date]:{attempts:prior.attempts+1,learned:prior.learned+(old?0:1),reviews:prior.reviews+(old?1:0),correct:prior.correct+(rating==='known'?1:0),seconds:prior.seconds+elapsed}}});interactionStarted.current=Date.now();
     if(mode==='plan'&&activeDrill!=='dictation'){
       const nextPasses=[...new Set([...currentPasses,activeDrill])];
       setRecords(v=>({...v,[current.id]:{...(v[current.id]||{}),stage,next:day(),last:day(),rating,planNew:true,passes:{...(v[current.id]?.passes||{}),[day()]:nextPasses}}}));
@@ -116,49 +128,43 @@ export default function Home() {
   function startAnotherGroup(){const size=Math.max(1,planIds.length||dailyTarget);const candidates=allWords.filter(w=>!planIds.includes(w.id)&&!records[w.id]?.passes?.[day()]?.includes('dictation')).slice(0,size).map(w=>w.id);if(!candidates.length){setMode('checkin');return}setPlanIds(candidates);setDailyPlans(v=>({...v,[day()]:candidates}));setPlanRound(0);setIndex(0);setRevealed(false);setAnswer('');setChoiceSelected('')}
   function finishCheckin(){const entry:Checkin={date:day(),completed:planIds.length,mastered:planMastered,reinforce:planReinforce};setCheckins(history=>[...history.filter(v=>v.date!==entry.date),entry]);setTodayCheckin(entry);setMode('checkin')}
   function openTodayPlan(){setMode(todayCheckin?'checkin':'plan')}
+  function openView(view:ViewMode){setMode(view);setQuery('');setIndex(0);setRevealed(false);setShowExpansion(false)}
   function toggleSaved(){ if(!current)return; const old=records[current.id]||{stage:0,next:day(),last:day(),rating:'again' as const}; setRecords(v=>({...v,[current.id]:{...old,saved:!old.saved}})); }
   function chooseList(n:number){setActiveList(n);setMode('learn');setQuery('');setShowLists(false)}
   function openRelatedWord(wordId:string){const target=allWords.find(word=>word.id===wordId);if(!target)return;setActiveList(target.list);setMode('learn');setQuery('');setIndex(Math.max(0,target.order-1));setRevealed(true);setShowExpansion(false)}
-  function exportData(){const snapshot:AppStateV2={schemaVersion:2,records,settings:{examDate},checkins,dailyPlans,sessions:{},meta:{updatedAt:new Date().toISOString()}};const blob=new Blob([JSON.stringify(snapshot,null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`词穹完整学习记录-${day()}.json`;a.click();URL.revokeObjectURL(a.href)}
-  function importData(e:React.ChangeEvent<HTMLInputElement>){const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const value=JSON.parse(String(r.result));if(isAppStateV2(value)){setRecords(value.records);setExamDate(value.settings.examDate);setCheckins(value.checkins);setDailyPlans(value.dailyPlans)}else if(value&&typeof value==='object'){setRecords(value as Records)}else throw new Error();setShowData(false)}catch{alert('无法读取这份记录文件')}};r.readAsText(f)}
+  function exportData(){const snapshot:AppStateV2={schemaVersion:2,records,settings:{examDate},checkins,dailyPlans,sessions:{dailyActivity:activity},meta:{updatedAt:new Date().toISOString()}};const blob=new Blob([JSON.stringify(snapshot,null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`词穹完整学习记录-${day()}.json`;a.click();URL.revokeObjectURL(a.href)}
+  function importData(e:React.ChangeEvent<HTMLInputElement>){const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const value=JSON.parse(String(r.result));if(isAppStateV2(value)){setRecords(value.records);setExamDate(value.settings.examDate);setCheckins(value.checkins);setDailyPlans(value.dailyPlans);setActivity((value.sessions.dailyActivity as Record<string,ActivityDay>)||{})}else if(value&&typeof value==='object'){setRecords(value as Records)}else throw new Error();setShowData(false)}catch{alert('无法读取这份记录文件')}};r.readAsText(f)}
 
   return <main>
-    <header className="topbar">
+    <header className={`topbar ${mode==='home'?'home-topbar':''}`}>
       <button className="brand" onClick={()=>{setMode('home');setQuery('')}} aria-label="回到首页"><span>词穹</span><i>VOCABULARY</i></button>
       <nav>
-        <button className={mode==='home'?'active':''} onClick={()=>setMode('home')}>首页</button>
-        <button className={mode==='learn'?'active':''} onClick={()=>setMode('learn')}>词库学习</button>
+        <button className={mode==='home'?'active':''} onClick={()=>openView('home')}>首页</button>
+        <button className={mode==='learn'?'active':''} onClick={()=>openView('learn')}>词库学习</button>
         <button className={mode==='plan'||mode==='checkin'?'active':''} onClick={openTodayPlan}>今日计划 {todayCheckin&&<b className="checked">✓</b>}</button>
-        <button className={mode==='review'?'active':''} onClick={()=>setMode('review')}>今日复习 <b>{due}</b></button>
+        <button className={mode==='review'?'active':''} onClick={()=>openView('review')}>今日复习 <b>{due}</b></button>
+        <button className={mode==='records'?'active':''} onClick={()=>openView('records')}>学习记录</button>
       </nav>
       <button className="data-btn" onClick={()=>setShowData(true)}>记录 · {progress}%</button>
     </header>
 
-    {mode==='home'&&<><section className="hero">
-      <div className="hero-copy">
-        <p className="eyebrow">IELTS · 64 LISTS · {allWords.length.toLocaleString()} WORDS</p>
-        <h1>让每一个词，<br/><em>在恰好的时间重逢。</em></h1>
-        <p className="intro">依据艾宾浩斯记忆节奏安排复习。无需登录，进度安静地保存在你的浏览器里。</p>
-        <div className="hero-actions"><button onClick={openTodayPlan}>开始今日计划 <span>→</span></button><button onClick={()=>setMode('learn')}>浏览主题词库</button></div>
+    {mode==='home'&&<section className="immersive-home" style={{backgroundImage:`url(${import.meta.env.BASE_URL||'/'}home-mountain.jpg)`}}>
+      <div className="home-shade"/>
+      <div className="home-heading"><p>IELTS · 22 THEMES · 64 LISTS</p><h1>词穹</h1><span>在雪山与湖泊之间，把 3,693 个词变成长期记忆。</span></div>
+      <div className="glass-bento" aria-label="今日学习面板">
+        <button className="glass-card today-card" onClick={openTodayPlan}><small>今日学习</small><strong>{todayCheckin?'已完成':'开始三轮训练'}</strong><p>{todayCheckin?'今日打卡已经保存。':`${dailyTarget} 个词 · 认识、辨义、听写`}</p><span>{todayCheckin?'查看今日总结':'开始学习 →'}</span></button>
+        <div className="glass-card calendar-card">
+          <header><div><small>学习日历</small><strong>{monthLabel}</strong></div><div><button aria-label="上个月" onClick={()=>setCalendarMonth(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1))}>‹</button><button aria-label="下个月" onClick={()=>setCalendarMonth(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1))}>›</button></div></header>
+          <div className="calendar-week">{['一','二','三','四','五','六','日'].map(label=><span key={label}>{label}</span>)}</div>
+          <div className="calendar-days">{calendarCells.map((date,index)=>date?<button key={date} className={`${date===day()?'today':''} ${selectedDate===date?'selected':''} ${checkins.some(item=>item.date===date)?'complete':''}`} onClick={()=>setSelectedDate(date)}><span>{Number(date.slice(-2))}</span>{(activity[date]?.attempts||Object.values(records).some(record=>record.last===date))&&<i/>}</button>:<i key={`blank-${index}`}/>)}</div>
+          <footer><span>{selectedDate}</span><b>{selectedCheckin?'✓ 已完成':`${selectedActivity.attempts||selectedLegacyCount} 次学习 · ${Math.ceil(selectedActivity.seconds/60)} 分钟`}</b><button onClick={()=>openView('records')}>完整记录 →</button></footer>
+        </div>
+        <button className="glass-card review-card" onClick={()=>openView('review')}><small>今日复习</small><strong>{due}</strong><p>{due?'到期词汇等待复习':'今天暂时没有到期任务'}</p><span>{due?'进入任务 →':'查看复习页'}</span></button>
+        <button className="glass-card theme-card" onClick={()=>{setActiveList(1);openView('learn')}}><small>正在学习的主题</small><strong>Chapter 01 · 自然地理</strong><p>Natural Geography · List 01–04</p><span>进入主题 →</span></button>
+        <div className="glass-card overview-card"><small>学习概览</small><div><span><b>{progress}%</b>总进度</span><span><b>{checkins.length}</b>打卡天数</span><span><b>{masteryRate}%</b>掌握率</span></div></div>
+        <div className="glass-card quick-card"><small>快捷入口</small><div><button onClick={()=>openView('saved')}>收藏 <b>{allWords.filter(word=>records[word.id]?.saved).length}</b></button><button onClick={()=>openView('review')}>错词 <b>{Object.values(records).filter(record=>record.rating==='again').length}</b></button><button onClick={()=>openView('records')}>记录 <b>→</b></button></div></div>
       </div>
-      <div className="hero-visual" aria-hidden="true">
-        <img src={`${import.meta.env.BASE_URL||'/'}home-mountain.jpg`} alt="" width="1080" height="1922" fetchPriority="high"/>
-        <span>向上生长，也向内沉静。</span>
-      </div>
-      <div className="stats">
-        <div><strong>{due}</strong><span>今日待复习</span></div>
-        <div><strong>{learned}</strong><span>已经掌握</span></div>
-        <div><strong>{todayDone}<small>/ {dailyTarget}</small></strong><span>今日学习目标</span></div>
-      </div>
-    </section>
-    <section className="home-grid" aria-label="学习概览">
-      <button className="home-card home-card-primary" onClick={openTodayPlan}><small>今日计划</small><strong>{todayCheckin?'今日已完成':`${dailyTarget} 个词`}</strong><p>{todayCheckin?'绿色打卡已保存，明天继续。':'三轮训练：认识、辨义、听写。'}</p><span>{todayCheckin?'查看记录':'开始训练 →'}</span></button>
-      <button className="home-card" onClick={()=>setMode('review')}><small>到期复习</small><strong>{due}</strong><p>根据每个单词的记忆阶段自动安排。</p><span>{due?'进入复习 →':'今日已清空'}</span></button>
-      <button className="home-card" onClick={()=>setMode('learn')}><small>主题词库</small><strong>22 个主题</strong><p>64 个 List 保留原书章节与学习顺序。</p><span>选择主题 →</span></button>
-      <button className="home-card home-card-progress" onClick={()=>setShowData(true)}><small>总学习进度</small><strong>{progress}%</strong><div><i style={{width:`${progress}%`}}/></div><p>{Object.keys(records).length.toLocaleString()} / {allWords.length.toLocaleString()} 个词已有记录</p><span>管理数据 →</span></button>
-      <button className="home-card home-card-saved" onClick={()=>setMode('saved')}><small>我的收藏</small><strong>{allWords.filter(word=>records[word.id]?.saved).length}</strong><p>集中回看主动收藏的重点词。</p><span>打开收藏 →</span></button>
-      <div className="home-card home-card-checkin"><small>学习状态</small><strong>{completedToday?'✓ 已打卡':'保持节奏'}</strong><p>{checkins.length?`已经留下 ${checkins.length} 天打卡记录。`:'完成今日三轮训练后生成第一张打卡。'}</p><span>{day()}</span></div>
-    </section></>}
+    </section>}
 
     {mode==='checkin'&&<section className="checkin-page">
       <div className="checkin-mark" aria-label="今日打卡成功">✓</div>
@@ -170,7 +176,12 @@ export default function Home() {
       <button onClick={()=>setMode('home')}>返回首页</button>
     </section>}
 
-    {mode!=='home'&&mode!=='checkin'&&<section className={`workspace ${mode==='plan'?'plan-only':''}`}>
+    {mode==='records'&&<section className="records-page">
+      <header><div><p className="eyebrow">LEARNING HISTORY</p><h1>学习记录</h1><span>所有数据来自当前设备的真实学习行为。</span></div><button onClick={()=>setShowData(true)}>导入 / 导出</button></header>
+      <div className="records-layout"><div className="records-calendar"><div className="records-month"><button onClick={()=>setCalendarMonth(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1))}>‹</button><strong>{monthLabel}</strong><button onClick={()=>setCalendarMonth(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1))}>›</button></div><div className="calendar-week">{['一','二','三','四','五','六','日'].map(label=><span key={label}>{label}</span>)}</div><div className="calendar-days large">{calendarCells.map((date,index)=>date?<button key={date} className={`${date===day()?'today':''} ${selectedDate===date?'selected':''} ${checkins.some(item=>item.date===date)?'complete':''}`} onClick={()=>setSelectedDate(date)}><span>{Number(date.slice(-2))}</span>{(activity[date]?.attempts||Object.values(records).some(record=>record.last===date))&&<i/>}</button>:<i key={`blank-${index}`}/>)}</div></div><aside className="day-detail"><small>日期详情</small><h2>{selectedDate}</h2><div><span><b>{selectedActivity.attempts||selectedLegacyCount}</b>学习次数</span><span><b>{selectedActivity.reviews}</b>复习次数</span><span><b>{Math.ceil(selectedActivity.seconds/60)}</b>学习分钟</span><span><b>{selectedCheckin?'已完成':'未打卡'}</b>完成状态</span></div><p>{selectedActivity.attempts?`正确反馈 ${selectedActivity.correct} 次；新学 ${selectedActivity.learned} 个词。`:'这一天还没有可记录的学习操作。'}</p></aside></div>
+    </section>}
+
+    {mode!=='home'&&mode!=='checkin'&&mode!=='records'&&<section className={`workspace ${mode==='plan'?'plan-only':''}`}>
       {mode!=='plan'&&<aside>
         <label className="search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索单词或释义"/></label>
         <button className="list-pick" onClick={()=>setShowLists(true)}><span><small>当前章节 · List {activeList}</small><b>{activeTheme?.themeZh||`List ${activeList}`}</b></span><i>选择 List →</i></button>
@@ -189,7 +200,7 @@ export default function Home() {
           <button className={activeDrill==='recall'?'active':''} onClick={()=>setDrill('recall')}><b>看义</b><small>回想单词</small></button>
           <button className={activeDrill==='dictation'?'active':''} onClick={()=>{setDrill('dictation');setTimeout(speak,80)}}><b>听音</b><small>拼写单词</small></button>
         </div>}
-        <div className="study-head"><span>{query?'搜索结果':mode==='review'?'今日复习':mode==='saved'?'我的收藏':mode==='plan'?`第 ${planRound+1} 轮 · ${planLabels[planRound]}`:`LIST ${activeList}`}</span><span>{mode==='plan'?`本轮剩余 ${activeWords.length}`:activeWords.length?`${index+1} / ${activeWords.length}`:'0 / 0'}</span></div>
+        <div className="study-head"><span>{query?'搜索结果':mode==='review'?'今日复习任务':mode==='saved'?'我的收藏':mode==='plan'?`第 ${planRound+1} 轮 · ${planLabels[planRound]}`:`CHAPTER ${String(activeTheme?.chapterNumbers[0]||1).padStart(2,'0')} · ${activeTheme?.themeZh||''} · LIST ${activeList}`}</span><span>{mode==='plan'?`本轮剩余 ${activeWords.length}`:activeWords.length?`${index+1} / ${activeWords.length}`:'0 / 0'}</span></div>
         {current ? <article key={`${current.id}-${activeDrill}`} className={`word-card ${revealed?'revealed':''} ${showExpansion?'expanded':''}`} onClick={()=>activeDrill==='recognize'&&setRevealed(true)}>
           <button className={`save ${records[current.id]?.saved?'saved':''}`} onClick={e=>{e.stopPropagation();toggleSaved()}} aria-label="收藏单词">{records[current.id]?.saved?'★':'☆'}</button>
           <div className="number">{String(current.order).padStart(2,'0')} <span>· LIST {current.list}</span></div>
@@ -224,10 +235,10 @@ export default function Home() {
 
     <footer><span>词穹 · 你的雅思词汇记忆空间</span><span>记录仅保存在当前浏览器 · 建议定期导出</span></footer>
     <nav className="mobile-nav" aria-label="移动端主导航">
-      <button className={mode==='home'?'active':''} onClick={()=>setMode('home')}><b>⌂</b><span>首页</span></button>
-      <button className={mode==='learn'||mode==='saved'?'active':''} onClick={()=>setMode('learn')}><b>文</b><span>词库</span></button>
+      <button className={mode==='home'?'active':''} onClick={()=>openView('home')}><b>⌂</b><span>首页</span></button>
+      <button className={mode==='learn'||mode==='saved'?'active':''} onClick={()=>openView('learn')}><b>文</b><span>词库</span></button>
       <button className={mode==='plan'||mode==='checkin'?'active':''} onClick={openTodayPlan}><b>{todayCheckin?'✓':'◉'}</b><span>计划</span></button>
-      <button className={mode==='review'?'active':''} onClick={()=>setMode('review')}><b>{due||'↻'}</b><span>复习</span></button>
+      <button className={mode==='review'?'active':''} onClick={()=>openView('review')}><b>{due||'↻'}</b><span>复习</span></button>
     </nav>
 
     {showLists&&<div className="overlay" onClick={()=>setShowLists(false)}><section className="panel list-panel" onClick={e=>e.stopPropagation()}><div className="panel-head"><div><small>全部词库 · 22 个主题</small><h3>按原书主题选择 List</h3></div><button onClick={()=>setShowLists(false)}>×</button></div><div className="list-grid">{lists.map(l=>{const done=l.words.filter(w=>records[w.id]).length;const theme=themes.find(item=>item.list===l.number);return <button key={l.number} onClick={()=>chooseList(l.number)}><span>LIST {String(l.number).padStart(2,'0')} · {l.words.length} 词</span><b>{theme?.themeZh||'主题待核对'}</b><small>{theme?.themeEn||''}</small><i style={{width:`${l.words.length?done/l.words.length*100:0}%`}}/></button>})}</div></section></div>}
