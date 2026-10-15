@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 1,
+  "status": "draft-for-human-review",
+  "updatedAt": "2026-10-15",
+  "policy": {
+    "examples": "All examples are original IELTS-style sentences, not Cambridge IELTS quotations.",
+    "progress": "Only wordId values from vocab.json count toward learning progress.",
+    "review": "No entry may move to approved without a second linguistic review."
+  },
+  "demoGroups": [
+    {
+      "chapter": 1,
+      "themeZh": "自然地理",
+      "themeEn": "Natural Geography",
+      "wordIds": ["l1-39", "l1-50", "l1-58", "l1-47", "l2-2", "l2-16", "l1-34", "l1-60", "l1-52", "l1-53"]
+    },
+    {
+      "chapter": 5,
+      "themeZh": "学校教育",
+      "themeEn": "School Education",
+      "wordIds": ["l15-38", "l15-41", "l15-53", "l15-39", "l16-20", "l17-40", "l12-6", "l12-22", "l16-17", "l17-37"]
+    },
+    {
+      "chapter": 6,
+      "themeZh": "科技发明",
+      "themeEn": "Technological Inventions",
+      "wordIds": ["l18-6", "l18-7", "l18-9", "l19-33", "l18-56", "l18-52", "l19-5", "l19-12", "l19-14", "l19-39"]
+    }
+  ],
+  "entries": [
+    {
+      "wordId": "l1-39", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"word-family","noteZh":"把 volcano 与同主题的 magma、erupt 连成“岩浆—喷发—火山”过程链；不对单词做牵强拆分。"},
+      "relations": [{"label":"magma","type":"semantic","targetWordId":"l1-41","isExtension":false},{"label":"erupt","type":"semantic","targetWordId":"l1-40","isExtension":false},{"label":"earthquake","type":"same-theme","targetWordId":"l1-50","isExtension":false},{"label":"eruption","type":"word-family","isExtension":true,"noteZh":"erupt 的名词"}],
+      "collocations": [{"text":"active volcano","translationZh":"活火山"},{"text":"volcanic eruption","translationZh":"火山喷发"}],
+      "example": {"text":"Scientists monitor the volcano continuously because a major eruption could disrupt nearby communities.","translationZh":"科学家持续监测这座火山，因为一次大规模喷发可能扰乱附近社区。","target":"volcano","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard geographical usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l1-50", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"compound","noteZh":"earth + quake：地面发生震动；quake 本身表示“震动”。"},
+      "relations": [{"label":"seismic","type":"same-theme","targetWordId":"l1-51","isExtension":false},{"label":"plate","type":"semantic","targetWordId":"l4-1","isExtension":false},{"label":"magnitude","type":"semantic","isExtension":true},{"label":"aftershock","type":"semantic","isExtension":true}],
+      "collocations": [{"text":"a powerful earthquake","translationZh":"强烈地震"},{"text":"earthquake-resistant buildings","translationZh":"抗震建筑"}],
+      "example": {"text":"Stricter building codes can reduce the number of deaths caused by a powerful earthquake.","translationZh":"更严格的建筑规范可以减少强震造成的死亡人数。","target":"earthquake","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard geographical usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l1-58", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"word-family","noteZh":"glacier 是冰川；相关形容词 glacial 表示“冰川的”或“冰冷的”。"},
+      "relations": [{"label":"frost","type":"same-theme","targetWordId":"l3-1","isExtension":false},{"label":"avalanche","type":"same-theme","targetWordId":"l1-52","isExtension":false},{"label":"climate","type":"semantic","targetWordId":"l2-46","isExtension":false},{"label":"glacial","type":"word-family","isExtension":true}],
+      "collocations": [{"text":"melting glacier","translationZh":"正在融化的冰川"},{"text":"glacial retreat","translationZh":"冰川退缩"}],
+      "example": {"text":"The retreating glacier provides visible evidence of long-term changes in the regional climate.","translationZh":"不断退缩的冰川为区域气候的长期变化提供了直观证据。","target":"glacier","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard geographical usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l1-47", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"用 drought（长期少雨）与 flooding（洪水泛滥）构成极端水文现象对照。"},
+      "relations": [{"label":"arid","type":"semantic","targetWordId":"l2-55","isExtension":false},{"label":"rainfall","type":"semantic","targetWordId":"l3-13","isExtension":false},{"label":"flooding","type":"antonym","targetWordId":"l1-48","isExtension":false},{"label":"climate","type":"same-theme","targetWordId":"l2-46","isExtension":false}],
+      "collocations": [{"text":"severe drought","translationZh":"严重干旱"},{"text":"prolonged drought","translationZh":"长期干旱"}],
+      "example": {"text":"A prolonged drought forced farmers to adopt crops that require less water.","translationZh":"长期干旱迫使农民改种需水量更少的作物。","target":"drought","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard environmental usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l2-2", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"plateau 是高而相对平坦的大片地形；与 plain（低平原）对照记忆。"},
+      "relations": [{"label":"plain","type":"semantic","targetWordId":"l2-1","isExtension":false},{"label":"mountain","type":"same-theme","targetWordId":"l3-22","isExtension":false},{"label":"altitude","type":"semantic","targetWordId":"l1-14","isExtension":false},{"label":"terrain","type":"hypernym","targetWordId":"l1-53","isExtension":false}],
+      "collocations": [{"text":"high plateau","translationZh":"高原"},{"text":"plateau region","translationZh":"高原地区"}],
+      "example": {"text":"Communities on the high plateau have adapted their farming methods to the short growing season.","translationZh":"高原上的社区已经调整耕作方式，以适应较短的生长季。","target":"plateau","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard geographical usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l2-16", "partOfSpeech": ["verb"],
+      "memoryAid": {"kind":"word-family","noteZh":"erode 是“侵蚀”；名词 erosion 表示侵蚀过程或结果。"},
+      "relations": [{"label":"sediment","type":"semantic","targetWordId":"l3-41","isExtension":false},{"label":"silt","type":"semantic","targetWordId":"l3-42","isExtension":false},{"label":"coast","type":"same-theme","targetWordId":"l2-25","isExtension":false},{"label":"erosion","type":"word-family","isExtension":true}],
+      "collocations": [{"text":"erode the coastline","translationZh":"侵蚀海岸线"},{"text":"soil erosion","translationZh":"土壤侵蚀"}],
+      "example": {"text":"More intense storms may erode the coastline faster than natural processes can restore it.","translationZh":"更强烈的风暴可能侵蚀海岸线，其速度超过自然过程的修复能力。","target":"erode","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard environmental usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l1-34", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"把 monsoon 与 seasonal rainfall、humid climate 组成“季节—降雨—湿润气候”语义链。"},
+      "relations": [{"label":"rainfall","type":"semantic","targetWordId":"l3-13","isExtension":false},{"label":"humid","type":"semantic","targetWordId":"l2-58","isExtension":false},{"label":"climate","type":"hypernym","targetWordId":"l2-46","isExtension":false},{"label":"drought","type":"semantic","targetWordId":"l1-47","isExtension":false}],
+      "collocations": [{"text":"summer monsoon","translationZh":"夏季风"},{"text":"monsoon season","translationZh":"季风季节；雨季"}],
+      "example": {"text":"The timing of the monsoon has a direct impact on crop yields across the region.","translationZh":"季风到来的时间会直接影响整个地区的农作物产量。","target":"monsoon","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard climatological usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l1-60", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"河流在入海口沉积泥沙，常形成近似希腊大写字母 Δ 的三角洲。"},
+      "relations": [{"label":"stream","type":"semantic","targetWordId":"l2-30","isExtension":false},{"label":"source","type":"semantic","targetWordId":"l2-31","isExtension":false},{"label":"sediment","type":"semantic","targetWordId":"l3-41","isExtension":false},{"label":"coast","type":"same-theme","targetWordId":"l2-25","isExtension":false}],
+      "collocations": [{"text":"river delta","translationZh":"河口三角洲"},{"text":"fertile delta","translationZh":"肥沃的三角洲"}],
+      "example": {"text":"The fertile delta supports intensive agriculture but remains highly vulnerable to rising sea levels.","translationZh":"肥沃的三角洲支撑着集约农业，却也极易受到海平面上升的影响。","target":"delta","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard geographical usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l1-52", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"把 avalanche 与 steep slope、snowy conditions 组成“陡坡积雪失稳”场景。"},
+      "relations": [{"label":"slope","type":"semantic","targetWordId":"l3-25","isExtension":false},{"label":"snowy","type":"semantic","targetWordId":"l2-59","isExtension":false},{"label":"mountain","type":"same-theme","targetWordId":"l3-22","isExtension":false},{"label":"landslide","type":"same-theme","isExtension":true}],
+      "collocations": [{"text":"trigger an avalanche","translationZh":"引发雪崩"},{"text":"avalanche risk","translationZh":"雪崩风险"}],
+      "example": {"text":"Warmer winter temperatures can make the snowpack unstable and increase the risk of an avalanche.","translationZh":"较高的冬季气温会使积雪层变得不稳定，并增加雪崩风险。","target":"avalanche","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard geographical usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l1-53", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"terrain 强调地面的地形条件；landscape 更常指可见的整体地貌或风景。"},
+      "relations": [{"label":"landscape","type":"semantic","targetWordId":"l1-54","isExtension":false},{"label":"plateau","type":"hyponym","targetWordId":"l2-2","isExtension":false},{"label":"plain","type":"hyponym","targetWordId":"l2-1","isExtension":false},{"label":"mountain","type":"hyponym","targetWordId":"l3-22","isExtension":false}],
+      "collocations": [{"text":"rugged terrain","translationZh":"崎岖地形"},{"text":"mountainous terrain","translationZh":"山地地形"}],
+      "example": {"text":"The rugged terrain makes it expensive to provide roads and public services to remote villages.","translationZh":"崎岖的地形使偏远村庄的道路和公共服务建设成本高昂。","target":"terrain","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard geographical usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+
+    {
+      "wordId": "l15-38", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"curriculum 指一所学校或一门课程体系的整体内容；syllabus 更常指某门课的具体教学大纲。"},
+      "relations": [{"label":"syllabus","type":"semantic","targetWordId":"l15-41","isExtension":false},{"label":"course","type":"semantic","targetWordId":"l15-36","isExtension":false},{"label":"lesson","type":"hyponym","targetWordId":"l15-37","isExtension":false},{"label":"elective","type":"same-theme","targetWordId":"l15-52","isExtension":false}],
+      "collocations": [{"text":"school curriculum","translationZh":"学校课程体系"},{"text":"revise the curriculum","translationZh":"修订课程设置"}],
+      "example": {"text":"Financial literacy should be included in the secondary-school curriculum.","translationZh":"金融素养应被纳入中学课程体系。","target":"curriculum","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard educational usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l15-41", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"syllabus 是单门课程的内容、阅读和考核安排；与整体 curriculum 区分。"},
+      "relations": [{"label":"curriculum","type":"semantic","targetWordId":"l15-38","isExtension":false},{"label":"timetable","type":"same-theme","targetWordId":"l15-33","isExtension":false},{"label":"assignment","type":"semantic","targetWordId":"l15-53","isExtension":false},{"label":"course","type":"hypernym","targetWordId":"l15-36","isExtension":false}],
+      "collocations": [{"text":"course syllabus","translationZh":"课程大纲"},{"text":"a detailed syllabus","translationZh":"详细的教学大纲"}],
+      "example": {"text":"The lecturer uploaded a revised syllabus that clearly explained the assessment criteria.","translationZh":"讲师上传了修订后的课程大纲，清楚说明了考核标准。","target":"syllabus","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard educational usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l15-53", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"word-family","noteZh":"assignment 来自 assign（分配、布置）；在教育语境中是被布置的作业或任务。"},
+      "relations": [{"label":"essay","type":"hyponym","targetWordId":"l16-21","isExtension":false},{"label":"project","type":"hyponym","targetWordId":"l16-24","isExtension":false},{"label":"deadline","type":"semantic","targetWordId":"l15-35","isExtension":false},{"label":"submit","type":"semantic","targetWordId":"l15-54","isExtension":false}],
+      "collocations": [{"text":"submit an assignment","translationZh":"提交作业"},{"text":"written assignment","translationZh":"书面作业"}],
+      "example": {"text":"Students must submit the assignment before the deadline to receive written feedback.","translationZh":"学生必须在截止日期前提交作业，才能获得书面反馈。","target":"assignment","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard educational usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l15-39", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"seminar 通常强调小组讨论和参与；lecture 通常以讲授为主。"},
+      "relations": [{"label":"lecture","type":"semantic","isExtension":true},{"label":"forum","type":"same-theme","targetWordId":"l15-40","isExtension":false},{"label":"presentation","type":"semantic","targetWordId":"l16-10","isExtension":false},{"label":"professor","type":"same-theme","targetWordId":"l12-22","isExtension":false}],
+      "collocations": [{"text":"attend a seminar","translationZh":"参加研讨课"},{"text":"research seminar","translationZh":"研究研讨会"}],
+      "example": {"text":"During the seminar, students compared two explanations for the decline in urban biodiversity.","translationZh":"在研讨课上，学生比较了城市生物多样性下降的两种解释。","target":"seminar","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard educational usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l16-20", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"word-family","noteZh":"thesis 的复数是 theses；它通常指需要论证的观点，也可指学位论文。"},
+      "relations": [{"label":"dissertation","type":"same-theme","targetWordId":"l16-23","isExtension":false},{"label":"essay","type":"same-theme","targetWordId":"l16-21","isExtension":false},{"label":"research","type":"semantic","targetWordId":"l17-20","isExtension":false},{"label":"hypothesis","type":"semantic","targetWordId":"l16-40","isExtension":false}],
+      "collocations": [{"text":"doctoral thesis","translationZh":"博士论文"},{"text":"defend a thesis","translationZh":"进行论文答辩；为论点辩护"}],
+      "example": {"text":"Her thesis examines how access to public transport affects employment opportunities.","translationZh":"她的论文研究公共交通可及性如何影响就业机会。","target":"thesis","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard academic usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l17-40", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"word-family","noteZh":"scholarship 与 scholar 同属词族；既可表示奖学金，也可表示学术研究或学问。"},
+      "relations": [{"label":"scholar","type":"word-family","targetWordId":"l12-23","isExtension":false},{"label":"fellowship","type":"same-theme","targetWordId":"l17-39","isExtension":false},{"label":"award","type":"hypernym","targetWordId":"l17-42","isExtension":false},{"label":"tuition","type":"semantic","isExtension":true}],
+      "collocations": [{"text":"win a scholarship","translationZh":"获得奖学金"},{"text":"full scholarship","translationZh":"全额奖学金"}],
+      "example": {"text":"The scholarship enabled her to study engineering without taking on substantial debt.","translationZh":"这笔奖学金使她无需承担巨额债务便能学习工程学。","target":"scholarship","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard educational usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l12-6", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"campus 指学校建筑和场地构成的校园；faculty 指院系或全体教员，不是校园。"},
+      "relations": [{"label":"university","type":"same-theme","targetWordId":"l11-18","isExtension":false},{"label":"college","type":"same-theme","targetWordId":"l11-19","isExtension":false},{"label":"faculty","type":"semantic","targetWordId":"l12-21","isExtension":false},{"label":"dining hall","type":"hyponym","targetWordId":"l12-7","isExtension":false}],
+      "collocations": [{"text":"university campus","translationZh":"大学校园"},{"text":"on campus","translationZh":"在校园内"}],
+      "example": {"text":"The new campus was designed to encourage walking and reduce dependence on private cars.","translationZh":"新校园的设计旨在鼓励步行并减少对私家车的依赖。","target":"campus","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard educational usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l12-22", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"professor 是高等教育中的学术职称；lecturer、tutor 的职责和职级因国家与学校而异。"},
+      "relations": [{"label":"lecturer","type":"same-theme","targetWordId":"l12-27","isExtension":false},{"label":"tutor","type":"same-theme","targetWordId":"l12-26","isExtension":false},{"label":"faculty","type":"hypernym","targetWordId":"l12-21","isExtension":false},{"label":"scholar","type":"same-theme","targetWordId":"l12-23","isExtension":false}],
+      "collocations": [{"text":"university professor","translationZh":"大学教授"},{"text":"associate professor","translationZh":"副教授"}],
+      "example": {"text":"The professor asked the class to evaluate the evidence rather than memorise a conclusion.","translationZh":"教授要求全班评估证据，而不是死记一个结论。","target":"professor","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard educational usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l16-17", "partOfSpeech": ["verb"],
+      "memoryAid": {"kind":"word-family","noteZh":"plagiarise 是动词；plagiarism 是“剽窃、抄袭”这一行为的名词。"},
+      "relations": [{"label":"cite","type":"semantic","targetWordId":"l16-32","isExtension":false},{"label":"quote","type":"semantic","targetWordId":"l16-34","isExtension":false},{"label":"reference","type":"semantic","targetWordId":"l16-31","isExtension":false},{"label":"plagiarism","type":"word-family","isExtension":true}],
+      "collocations": [{"text":"plagiarise an essay","translationZh":"抄袭论文"},{"text":"plagiarise from a source","translationZh":"从某来源剽窃"}],
+      "example": {"text":"Students who use another writer's ideas without acknowledgement may plagiarise even if they change a few words.","translationZh":"学生若使用他人的观点却不注明出处，即使改动少量措辞，也可能构成抄袭。","target":"plagiarise","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard academic usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l17-37", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"feedback 是接收表现信息后再调整的闭环；它可以是正面或负面意见。"},
+      "relations": [{"label":"assessment","type":"semantic","isExtension":true},{"label":"grade","type":"semantic","targetWordId":"l17-30","isExtension":false},{"label":"praise","type":"hyponym","targetWordId":"l17-35","isExtension":false},{"label":"review","type":"same-theme","targetWordId":"l15-56","isExtension":false}],
+      "collocations": [{"text":"constructive feedback","translationZh":"建设性反馈"},{"text":"provide feedback","translationZh":"提供反馈"}],
+      "example": {"text":"Timely feedback helps learners identify errors before those errors become habits.","translationZh":"及时反馈能帮助学习者在错误变成习惯之前发现问题。","target":"feedback","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard educational usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+
+    {
+      "wordId": "l18-6", "partOfSpeech": ["verb"],
+      "memoryAid": {"kind":"word-family","noteZh":"innovate 是“创新”的动作；innovation 是创新本身，innovative 表示“创新的”。"},
+      "relations": [{"label":"invent","type":"semantic","targetWordId":"l18-11","isExtension":false},{"label":"breakthrough","type":"semantic","targetWordId":"l18-7","isExtension":false},{"label":"technology","type":"same-theme","targetWordId":"l17-44","isExtension":false},{"label":"innovation","type":"word-family","isExtension":true}],
+      "collocations": [{"text":"innovate rapidly","translationZh":"快速创新"},{"text":"innovate in manufacturing","translationZh":"在制造业进行创新"}],
+      "example": {"text":"Small firms often innovate rapidly because they can test new ideas without lengthy approval procedures.","translationZh":"小企业往往创新更快，因为它们无需冗长审批便可测试新想法。","target":"innovate","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard technology usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l18-7", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"compound","noteZh":"break + through：突破原有障碍；在科研中指带来显著进展的重要发现或成果。"},
+      "relations": [{"label":"advance","type":"synonym","targetWordId":"l18-5","isExtension":false},{"label":"innovate","type":"semantic","targetWordId":"l18-6","isExtension":false},{"label":"discover","type":"semantic","targetWordId":"l18-12","isExtension":false},{"label":"prototype","type":"same-theme","targetWordId":"l19-33","isExtension":false}],
+      "collocations": [{"text":"major breakthrough","translationZh":"重大突破"},{"text":"scientific breakthrough","translationZh":"科学突破"}],
+      "example": {"text":"The new battery represents a major breakthrough in long-term energy storage.","translationZh":"这种新型电池代表了长期储能领域的一项重大突破。","target":"breakthrough","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard technology usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l18-9", "partOfSpeech": ["noun", "verb"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"patent 是保护发明的法定权利；prototype 是测试设计的原型，两者不是同一概念。"},
+      "relations": [{"label":"invent","type":"semantic","targetWordId":"l18-11","isExtension":false},{"label":"prototype","type":"semantic","targetWordId":"l19-33","isExtension":false},{"label":"devise","type":"same-theme","targetWordId":"l18-10","isExtension":false},{"label":"intellectual property","type":"hypernym","isExtension":true}],
+      "collocations": [{"text":"file a patent","translationZh":"申请专利"},{"text":"patent protection","translationZh":"专利保护"}],
+      "example": {"text":"A patent can encourage investment by giving an inventor temporary control over commercial use of an invention.","translationZh":"专利赋予发明者对发明商业使用的临时控制权，从而能够鼓励投资。","target":"patent","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","general patent terminology"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l19-33", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"word-family","noteZh":"proto- 表示“最初、原始”，type 表示“类型/样式”；prototype 是用于测试的初始模型。"},
+      "relations": [{"label":"devise","type":"semantic","targetWordId":"l18-10","isExtension":false},{"label":"test","type":"semantic","targetWordId":"l16-8","isExtension":false},{"label":"patent","type":"same-theme","targetWordId":"l18-9","isExtension":false},{"label":"model","type":"synonym","isExtension":true}],
+      "collocations": [{"text":"working prototype","translationZh":"可运行原型"},{"text":"build a prototype","translationZh":"制作原型"}],
+      "example": {"text":"Engineers built a working prototype before committing resources to mass production.","translationZh":"工程师先制作了一个可运行原型，之后才把资源投入批量生产。","target":"prototype","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard technology usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l18-56", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"word-family","noteZh":"sensor 与 sense 同族：它负责感知温度、光线、压力或运动等变化。"},
+      "relations": [{"label":"instrument","type":"hypernym","targetWordId":"l18-32","isExtension":false},{"label":"gauge","type":"same-theme","targetWordId":"l18-34","isExtension":false},{"label":"measure","type":"semantic","targetWordId":"l18-35","isExtension":false},{"label":"detector","type":"synonym","isExtension":true}],
+      "collocations": [{"text":"motion sensor","translationZh":"运动传感器"},{"text":"sensor data","translationZh":"传感器数据"}],
+      "example": {"text":"Each sensor transmits temperature data to a central system every five minutes.","translationZh":"每个传感器每五分钟向中央系统传输一次温度数据。","target":"sensor","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard engineering usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l18-52", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"compound","noteZh":"micro- 表示“小”，-scope 与“观察仪器”有关；microscope 用于观察肉眼难见的微小对象。"},
+      "relations": [{"label":"lens","type":"semantic","targetWordId":"l18-53","isExtension":false},{"label":"optics","type":"same-theme","targetWordId":"l18-51","isExtension":false},{"label":"instrument","type":"hypernym","targetWordId":"l18-32","isExtension":false},{"label":"telescope","type":"same-theme","isExtension":true}],
+      "collocations": [{"text":"electron microscope","translationZh":"电子显微镜"},{"text":"under a microscope","translationZh":"在显微镜下"}],
+      "example": {"text":"Under the microscope, researchers observed structural changes that were invisible to the naked eye.","translationZh":"在显微镜下，研究人员观察到了肉眼无法看见的结构变化。","target":"microscope","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard scientific usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l19-5", "partOfSpeech": ["noun"],
+      "memoryAid": {"kind":"semantic-contrast","noteZh":"software 是程序和数据；hardware 是实体设备。两者构成计算机系统的基本对照。"},
+      "relations": [{"label":"browser","type":"hyponym","targetWordId":"l19-1","isExtension":false},{"label":"laptop","type":"semantic","targetWordId":"l19-4","isExtension":false},{"label":"digital","type":"same-theme","targetWordId":"l19-13","isExtension":false},{"label":"hardware","type":"antonym","isExtension":true}],
+      "collocations": [{"text":"install software","translationZh":"安装软件"},{"text":"software update","translationZh":"软件更新"}],
+      "example": {"text":"Open-source software allows researchers to inspect and adapt the tools used in their analysis.","translationZh":"开源软件使研究人员能够检查并调整分析中使用的工具。","target":"software","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard computing usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l19-12", "partOfSpeech": ["adjective", "noun"],
+      "memoryAid": {"kind":"morphology","noteZh":"bi- 表示“二”；binary 描述只有两个状态的系统，计算中常见 0 和 1。"},
+      "relations": [{"label":"digital","type":"same-theme","targetWordId":"l19-13","isExtension":false},{"label":"software","type":"semantic","targetWordId":"l19-5","isExtension":false},{"label":"compute","type":"semantic","targetWordId":"l18-37","isExtension":false},{"label":"bit","type":"semantic","isExtension":true}],
+      "collocations": [{"text":"binary code","translationZh":"二进制代码"},{"text":"binary system","translationZh":"二进制系统"}],
+      "example": {"text":"Digital devices encode information in binary form so that electronic circuits can process it reliably.","translationZh":"数字设备以二进制形式编码信息，使电子电路能够可靠处理。","target":"binary","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard computing usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l19-14", "partOfSpeech": ["adjective"],
+      "memoryAid": {"kind":"compound","noteZh":"wire + less：不需要线缆连接；-less 表示“没有……的”。"},
+      "relations": [{"label":"network","type":"semantic","targetWordId":"l18-58","isExtension":false},{"label":"digital","type":"same-theme","targetWordId":"l19-13","isExtension":false},{"label":"laptop","type":"semantic","targetWordId":"l19-4","isExtension":false},{"label":"wired","type":"antonym","isExtension":true}],
+      "collocations": [{"text":"wireless network","translationZh":"无线网络"},{"text":"wireless connection","translationZh":"无线连接"}],
+      "example": {"text":"Reliable wireless access can expand educational opportunities in remote communities.","translationZh":"可靠的无线接入能够扩大偏远社区的教育机会。","target":"wireless","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard networking usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    },
+    {
+      "wordId": "l19-39", "partOfSpeech": ["verb"],
+      "memoryAid": {"kind":"morphology","noteZh":"trans- 表示“跨越、改变”，form 表示“形态”；transform 强调形态或性质发生显著改变。"},
+      "relations": [{"label":"alter","type":"synonym","targetWordId":"l19-40","isExtension":false},{"label":"shift","type":"semantic","targetWordId":"l19-41","isExtension":false},{"label":"adapt","type":"semantic","targetWordId":"l19-43","isExtension":false},{"label":"innovation","type":"semantic","isExtension":true}],
+      "collocations": [{"text":"transform an industry","translationZh":"改变一个行业"},{"text":"digital transformation","translationZh":"数字化转型"}],
+      "example": {"text":"Automation may transform routine jobs while creating demand for new technical skills.","translationZh":"自动化可能改变常规工作，同时创造对新技术技能的需求。","target":"transform","sourceType":"original-ielts-style","copyrightStatus":"Original for 词穹; not copied from an IELTS test."},
+      "provenance": {"contentAuthor":"词穹编辑示范","linguisticSources":["原始词库词义","standard technology usage"],"reviewStatus":"draft","updatedAt":"2026-10-15"}
+    }
+  ]
+}
