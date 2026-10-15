@@ -129,9 +129,9 @@ export default function Home() {
       <div className="study-area">
         {mode==='plan'&&<div className="plan-flow"><div><small>今日训练</small><strong>第 {planRound+1} 轮 · {planLabels[planRound]}</strong></div><ol>{planLabels.map((label,i)=><li key={label} className={i<planRound?'done':i===planRound?'current':''}><i>{i<planRound?'✓':i+1}</i><span>{label}</span></li>)}</ol><p>{planRound===0?'看到单词时自动播放发音，点击卡片查看释义。':planRound===1?'英译中与中译英交替出现，从四个选项中选择。':'只听发音完成拼写，答题结果决定下次复习时间。'}</p></div>}
         {mode!=='plan'&&<div className="drill-tabs" aria-label="训练模式">
-          <button disabled={guidedNew} className={activeDrill==='recognize'?'active':''} onClick={()=>setDrill('recognize')}><b>看词</b><small>辨认释义</small></button>
-          <button disabled={guidedNew} className={activeDrill==='recall'?'active':''} onClick={()=>setDrill('recall')}><b>看义</b><small>回想单词</small></button>
-          <button disabled={guidedNew} className={activeDrill==='dictation'?'active':''} onClick={()=>{setDrill('dictation');setTimeout(speak,80)}}><b>听音</b><small>拼写单词</small></button>
+          <button className={activeDrill==='recognize'?'active':''} onClick={()=>setDrill('recognize')}><b>看词</b><small>辨认释义</small></button>
+          <button className={activeDrill==='recall'?'active':''} onClick={()=>setDrill('recall')}><b>看义</b><small>回想单词</small></button>
+          <button className={activeDrill==='dictation'?'active':''} onClick={()=>{setDrill('dictation');setTimeout(speak,80)}}><b>听音</b><small>拼写单词</small></button>
         </div>}
         <div className="study-head"><span>{query?'搜索结果':mode==='review'?'今日复习':mode==='saved'?'我的收藏':mode==='plan'?`第 ${planRound+1} 轮 · ${planLabels[planRound]}`:`LIST ${activeList}`}</span><span>{mode==='plan'?`本轮剩余 ${activeWords.length}`:activeWords.length?`${index+1} / ${activeWords.length}`:'0 / 0'}</span></div>
         {current ? <article key={`${current.id}-${activeDrill}`} className={`word-card ${revealed?'revealed':''}`} onClick={()=>activeDrill==='recognize'&&setRevealed(true)}>
