@@ -1,25 +1,33 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { localDateKey } from "./v2/date";
+import { isDue, REVIEW_INTERVALS, scheduleReview } from "./v2/scheduler";
+import { isAppStateV2, loadState, saveState } from "./v2/storage";
+import type { AppStateV2, Checkin, Drill, ListTheme, RecordItem, Records, VocabularyExtension } from "./v2/types";
 
 type Word = { id: string; order: number; word: string; definition: string; phonetic?: string };
 type VocabList = { number: number; title: string; words: Word[] };
-type RecordItem = { stage: number; next: string; last: string; rating: "again"|"hard"|"known"; saved?: boolean; planNew?: boolean; passes?: Record<string,string[]>; completed?: string };
-type Records = Record<string, RecordItem>;
-type Checkin = { date:string; completed:number; mastered:number; reinforce:number };
-type Drill = "recognize"|"recall"|"dictation";
 const drillOrder:Drill[]=["recognize","recall","dictation"];
 const planLabels=["认识与听音","四选一辨义","听音拼写"];
 
-const intervals = [0, 1, 3, 7, 15, 30, 60];
-const day = () => new Date().toISOString().slice(0, 10);
-const addDays = (n: number) => { const d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
-const addMinutes = (n:number) => new Date(Date.now()+n*60_000).toISOString();
-const isDue = (next:string) => next.length===10 ? next<=day() : new Date(next).getTime()<=Date.now();
+const intervals = REVIEW_INTERVALS;
+const day = () => localDateKey();
+
+function HighlightTarget({text,target}:{text:string;target:string}) {
+  const index=text.toLowerCase().indexOf(target.toLowerCase());
+  if(index<0)return text;
+  return <>{text.slice(0,index)}<mark>{text.slice(index,index+target.length)}</mark>{text.slice(index+target.length)}</>;
+}
 
 export default function Home() {
   const [lists,setLists]=useState<VocabList[]>([]);
+  const [themes,setThemes]=useState<ListTheme[]>([]);
+  const [extensions,setExtensions]=useState<VocabularyExtension[]>([]);
   const [records,setRecords]=useState<Records>({});
+  const [checkins,setCheckins]=useState<Checkin[]>([]);
+  const [dailyPlans,setDailyPlans]=useState<Record<string,string[]>>({});
+  const [hydrated,setHydrated]=useState(false);
   const [activeList,setActiveList]=useState(1);
   const [index,setIndex]=useState(0);
   const [revealed,setRevealed]=useState(false);
@@ -35,17 +43,32 @@ export default function Home() {
   const [planRound,setPlanRound]=useState(0);
   const [choiceSelected,setChoiceSelected]=useState("");
   const [todayCheckin,setTodayCheckin]=useState<Checkin|null>(null);
+  const [showExpansion,setShowExpansion]=useState(false);
   const fileRef=useRef<HTMLInputElement>(null);
 
-  useEffect(()=>{ fetch(`${import.meta.env.BASE_URL||'/'}vocab.json`).then(r=>r.json()).then(setLists); const raw=localStorage.getItem('ielts-vocab-records'); if(raw) try{setRecords(JSON.parse(raw))}catch{};setExamDate(localStorage.getItem('ielts-exam-date')||'');try{const saved=JSON.parse(localStorage.getItem('ielts-checkins')||'[]');if(Array.isArray(saved))setTodayCheckin(saved.find((v:Checkin)=>v.date===day())||null)}catch{} },[]);
-  useEffect(()=>{ if(Object.keys(records).length) localStorage.setItem('ielts-vocab-records',JSON.stringify(records)); },[records]);
+  useEffect(()=>{
+    Promise.all([
+      fetch(`${import.meta.env.BASE_URL||'/'}vocab.json`).then(r=>r.json()),
+      fetch(`${import.meta.env.BASE_URL||'/'}data/list-themes.v1.json`).then(r=>r.json()),
+      fetch(`${import.meta.env.BASE_URL||'/'}data/vocab-expansions.demo.v1.json`).then(r=>r.json()),
+    ]).then(([vocab,themeData,extensionData])=>{setLists(vocab);setThemes(themeData.lists||[]);setExtensions(extensionData.entries||[])});
+    const state=loadState(localStorage);
+    setRecords(state.records);setExamDate(state.settings.examDate);setCheckins(state.checkins);setDailyPlans(state.dailyPlans);
+    setTodayCheckin(state.checkins.find(v=>v.date===day())||null);setHydrated(true);
+  },[]);
+  useEffect(()=>{
+    if(!hydrated)return;
+    const state:AppStateV2={schemaVersion:2,records,settings:{examDate},checkins,dailyPlans,sessions:{},meta:{updatedAt:new Date().toISOString()}};
+    saveState(localStorage,state);
+  },[hydrated,records,examDate,checkins,dailyPlans]);
 
   const allWords=useMemo(()=>lists.flatMap(l=>l.words.map(w=>({...w,list:l.number}))),[lists]);
+  const activeTheme=themes.find(theme=>theme.list===activeList);
   const remaining=allWords.filter(w=>!records[w.id]).length;
   const daysLeft=examDate?Math.max(1,Math.ceil((new Date(`${examDate}T12:00:00`).getTime()-Date.now())/86_400_000)):0;
   const dailyTarget=examDate?Math.max(1,Math.ceil(remaining/daysLeft)):30;
   const todayDone=Object.values(records).filter(r=>r.completed===day()||(!r.completed&&r.last===day()&&!r.planNew)).length;
-  useEffect(()=>{if(mode!=='plan'||!allWords.length||planIds.length)return;const key=`ielts-plan-${day()}`;try{const saved=JSON.parse(localStorage.getItem(key)||'[]');if(saved.length){setPlanIds(saved);return}}catch{}const dueWords=allWords.filter(w=>records[w.id]&&isDue(records[w.id].next));const fresh=allWords.filter(w=>!records[w.id]).slice(0,Math.max(0,dailyTarget-dueWords.length));const ids=[...dueWords,...fresh].map(w=>w.id);setPlanIds(ids);localStorage.setItem(key,JSON.stringify(ids))},[mode,allWords.length,dailyTarget]);
+  useEffect(()=>{if(mode!=='plan'||!allWords.length||planIds.length)return;const date=day();const saved=dailyPlans[date];if(saved?.length){setPlanIds(saved);return}const dueWords=allWords.filter(w=>records[w.id]&&isDue(records[w.id].next));const fresh=allWords.filter(w=>!records[w.id]).slice(0,Math.max(0,dailyTarget-dueWords.length));const ids=[...dueWords,...fresh].map(w=>w.id);setPlanIds(ids);setDailyPlans(v=>({...v,[date]:ids}))},[mode,allWords.length,dailyTarget,dailyPlans,planIds.length,records]);
   const activeWords=useMemo(()=>{
     if(query.trim()){const q=query.toLowerCase(); return allWords.filter(w=>w.word.toLowerCase().includes(q)||w.definition.includes(query)).slice(0,120)}
     if(mode==='review') return allWords.filter(w=>records[w.id]&&isDue(records[w.id].next));
@@ -55,6 +78,7 @@ export default function Home() {
   },[lists,allWords,activeList,mode,records,query,dailyTarget,planIds,planRound]);
   useEffect(()=>{setIndex(0);setRevealed(false);setAnswer("")},[activeList,mode,query,drill]);
   const current=activeWords[index%Math.max(activeWords.length,1)];
+  const currentExtension=extensions.find(entry=>entry.wordId===current?.id);
   const currentPasses=current?(records[current.id]?.passes?.[day()]||[]):[];
   const activeDrill:Drill=mode==='plan'?drillOrder[planRound]:drill;
   const learned=Object.values(records).filter(r=>r.rating==='known').length;
@@ -76,27 +100,25 @@ export default function Home() {
     if(mode==='plan'&&activeDrill!=='dictation'){
       const nextPasses=[...new Set([...currentPasses,activeDrill])];
       setRecords(v=>({...v,[current.id]:{...(v[current.id]||{}),stage,next:day(),last:day(),rating,planNew:true,passes:{...(v[current.id]?.passes||{}),[day()]:nextPasses}}}));
-      setAnswer("");setChoiceSelected("");setRevealed(false);setIndex(0);return;
+      setAnswer("");setChoiceSelected("");setRevealed(false);setShowExpansion(false);setIndex(0);return;
     }
-    let next:string;
-    if(rating==='again'){stage=0;next=addMinutes(10)}
-    else if(rating==='hard'){stage=Math.max(1,stage);next=addDays(1)}
-    else {stage=Math.min(6,stage+1);next=addDays(intervals[stage])}
+    const scheduled=scheduleReview(old,rating);stage=scheduled.stage;const next=scheduled.next;
     const passes=mode==='plan'?[...new Set([...currentPasses,activeDrill])]:currentPasses;
     setRecords(v=>({...v,[current.id]:{...v[current.id],stage,next,last:day(),rating,planNew:false,completed:day(),passes:mode==='plan'?{...(v[current.id]?.passes||{}),[day()]:passes}:v[current.id]?.passes}}));
-    setAnswer("");setChoiceSelected("");setRevealed(false); setIndex(mode==='plan'?0:i=>(i+1)%Math.max(activeWords.length,1));
+    setAnswer("");setChoiceSelected("");setRevealed(false);setShowExpansion(false); setIndex(mode==='plan'?0:i=>(i+1)%Math.max(activeWords.length,1));
   }
   function speak(){if(!current)return; speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(current.word);u.lang='en-GB';u.rate=.86;speechSynthesis.speak(u)}
   function checkAnswer(){if(!answer.trim())return;setRevealed(true)}
   function choosePlanOption(option:string,correct:boolean){if(revealed)return;setChoiceSelected(option);setRevealed(true);window.setTimeout(()=>rate(correct?'known':'hard',true),700)}
   function submitPlanSpelling(){if(!current||!answer.trim()||revealed)return;const correct=answer.trim().toLowerCase()===current.word.toLowerCase();setRevealed(true);window.setTimeout(()=>rate(correct?'known':'again',true),850)}
-  function startAnotherGroup(){const size=Math.max(1,planIds.length||dailyTarget);const candidates=allWords.filter(w=>!planIds.includes(w.id)&&!records[w.id]?.passes?.[day()]?.includes('dictation')).slice(0,size).map(w=>w.id);if(!candidates.length){setMode('checkin');return}setPlanIds(candidates);localStorage.setItem(`ielts-plan-${day()}`,JSON.stringify(candidates));setPlanRound(0);setIndex(0);setRevealed(false);setAnswer('');setChoiceSelected('')}
-  function finishCheckin(){const entry:Checkin={date:day(),completed:planIds.length,mastered:planMastered,reinforce:planReinforce};let history:Checkin[]=[];try{const saved=JSON.parse(localStorage.getItem('ielts-checkins')||'[]');history=Array.isArray(saved)?saved:[]}catch{}localStorage.setItem('ielts-checkins',JSON.stringify([...history.filter(v=>v.date!==entry.date),entry]));setTodayCheckin(entry);setMode('checkin')}
+  function startAnotherGroup(){const size=Math.max(1,planIds.length||dailyTarget);const candidates=allWords.filter(w=>!planIds.includes(w.id)&&!records[w.id]?.passes?.[day()]?.includes('dictation')).slice(0,size).map(w=>w.id);if(!candidates.length){setMode('checkin');return}setPlanIds(candidates);setDailyPlans(v=>({...v,[day()]:candidates}));setPlanRound(0);setIndex(0);setRevealed(false);setAnswer('');setChoiceSelected('')}
+  function finishCheckin(){const entry:Checkin={date:day(),completed:planIds.length,mastered:planMastered,reinforce:planReinforce};setCheckins(history=>[...history.filter(v=>v.date!==entry.date),entry]);setTodayCheckin(entry);setMode('checkin')}
   function openTodayPlan(){setMode(todayCheckin?'checkin':'plan')}
   function toggleSaved(){ if(!current)return; const old=records[current.id]||{stage:0,next:day(),last:day(),rating:'again' as const}; setRecords(v=>({...v,[current.id]:{...old,saved:!old.saved}})); }
   function chooseList(n:number){setActiveList(n);setMode('learn');setQuery('');setShowLists(false)}
-  function exportData(){const blob=new Blob([JSON.stringify(records,null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`词穹学习记录-${day()}.json`;a.click();URL.revokeObjectURL(a.href)}
-  function importData(e:React.ChangeEvent<HTMLInputElement>){const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{setRecords(JSON.parse(String(r.result)));setShowData(false)}catch{alert('无法读取这份记录文件')}};r.readAsText(f)}
+  function openRelatedWord(wordId:string){const target=allWords.find(word=>word.id===wordId);if(!target)return;setActiveList(target.list);setMode('learn');setQuery('');setIndex(Math.max(0,target.order-1));setRevealed(true);setShowExpansion(false)}
+  function exportData(){const snapshot:AppStateV2={schemaVersion:2,records,settings:{examDate},checkins,dailyPlans,sessions:{},meta:{updatedAt:new Date().toISOString()}};const blob=new Blob([JSON.stringify(snapshot,null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`词穹完整学习记录-${day()}.json`;a.click();URL.revokeObjectURL(a.href)}
+  function importData(e:React.ChangeEvent<HTMLInputElement>){const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const value=JSON.parse(String(r.result));if(isAppStateV2(value)){setRecords(value.records);setExamDate(value.settings.examDate);setCheckins(value.checkins);setDailyPlans(value.dailyPlans)}else if(value&&typeof value==='object'){setRecords(value as Records)}else throw new Error();setShowData(false)}catch{alert('无法读取这份记录文件')}};r.readAsText(f)}
 
   return <main>
     <header className="topbar">
@@ -136,7 +158,7 @@ export default function Home() {
     {mode!=='checkin'&&<section className={`workspace ${mode==='plan'?'plan-only':''}`}>
       {mode!=='plan'&&<aside>
         <label className="search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索单词或释义"/></label>
-        <button className="list-pick" onClick={()=>setShowLists(true)}><span><small>当前章节</small><b>List {activeList}</b></span><i>选择 List →</i></button>
+        <button className="list-pick" onClick={()=>setShowLists(true)}><span><small>当前章节 · List {activeList}</small><b>{activeTheme?.themeZh||`List ${activeList}`}</b></span><i>选择 List →</i></button>
         <button className="plan-card" onClick={()=>setShowPlan(true)}><span><small>{examDate?'距离考试':'制定学习计划'}</small><b>{examDate?`${daysLeft} 天`:'设置考试日期'}</b></span><i>{examDate?`每天约 ${dailyTarget} 词`:'开始 →'}</i><em style={{width:`${Math.min(100,todayDone/dailyTarget*100)}%`}}/></button>
         <div className="curve">
           <p>复习节奏</p>
@@ -153,7 +175,7 @@ export default function Home() {
           <button className={activeDrill==='dictation'?'active':''} onClick={()=>{setDrill('dictation');setTimeout(speak,80)}}><b>听音</b><small>拼写单词</small></button>
         </div>}
         <div className="study-head"><span>{query?'搜索结果':mode==='review'?'今日复习':mode==='saved'?'我的收藏':mode==='plan'?`第 ${planRound+1} 轮 · ${planLabels[planRound]}`:`LIST ${activeList}`}</span><span>{mode==='plan'?`本轮剩余 ${activeWords.length}`:activeWords.length?`${index+1} / ${activeWords.length}`:'0 / 0'}</span></div>
-        {current ? <article key={`${current.id}-${activeDrill}`} className={`word-card ${revealed?'revealed':''}`} onClick={()=>activeDrill==='recognize'&&setRevealed(true)}>
+        {current ? <article key={`${current.id}-${activeDrill}`} className={`word-card ${revealed?'revealed':''} ${showExpansion?'expanded':''}`} onClick={()=>activeDrill==='recognize'&&setRevealed(true)}>
           <button className={`save ${records[current.id]?.saved?'saved':''}`} onClick={e=>{e.stopPropagation();toggleSaved()}} aria-label="收藏单词">{records[current.id]?.saved?'★':'☆'}</button>
           <div className="number">{String(current.order).padStart(2,'0')} <span>· LIST {current.list}</span></div>
           {activeDrill==='recognize' ? <><h2>{current.word}</h2>{current.phonetic&&<p className="phonetic">{current.phonetic}</p>}<button className="sound" onClick={e=>{e.stopPropagation();speak()}}>↗ <span>{mode==='plan'?'已自动播放 · 再听一次':'听发音'}</span></button><div className="definition"><small>释义</small><p>{current.definition||'释义待校对'}</p></div></> : activeDrill==='recall'&&mode==='plan'?<>
@@ -167,6 +189,15 @@ export default function Home() {
             {revealed&&<div className={`answer-result ${answer.trim().toLowerCase()===current.word.toLowerCase()?'correct':'incorrect'}`}><small>{answer.trim().toLowerCase()===current.word.toLowerCase()?'拼写正确':'拼写错误 · 正确答案'}</small>{answer.trim().toLowerCase()!==current.word.toLowerCase()&&<em>你的答案：{answer}</em>}<b>{current.word}</b>{current.phonetic&&<span>{current.phonetic}</span>}</div>}
           </>}
           {!revealed&&activeDrill==='recognize'&&<div className="reveal">点击查看释义 <span>SPACE</span></div>}
+          {revealed&&currentExtension&&activeDrill==='recognize'&&<div className="extension-shell" onClick={event=>event.stopPropagation()}>
+            <button className="extension-toggle" aria-expanded={showExpansion} onClick={()=>setShowExpansion(value=>!value)}><span>拓展记忆 · {currentExtension.partOfSpeech.join(' / ')}</span><b>{showExpansion?'收起':'展开'} {showExpansion?'↑':'↓'}</b></button>
+            {showExpansion&&<div className="extension-content">
+              {currentExtension.memoryAid&&<section><small>联想记忆</small><p>{currentExtension.memoryAid.noteZh}</p></section>}
+              <section><small>同主题关联</small><div className="relation-chips">{currentExtension.relations.map(relation=><button key={`${relation.label}-${relation.type}`} disabled={relation.isExtension} onClick={()=>relation.targetWordId&&openRelatedWord(relation.targetWordId)}><span>{relation.label}</span><i>{relation.isExtension?'扩展词':'查看 →'}</i></button>)}</div></section>
+              <section><small>高频搭配</small><div className="collocations">{currentExtension.collocations.map(item=><p key={item.text}><b>{item.text}</b><span>{item.translationZh}</span></p>)}</div></section>
+              <section className="context-example"><small>原创雅思风格例句</small><p><HighlightTarget text={currentExtension.example.text} target={currentExtension.example.target}/></p><em>{currentExtension.example.translationZh}</em><div className="example-source">{currentExtension.example.copyrightStatus} · {currentExtension.provenance.reviewStatus} · {currentExtension.provenance.updatedAt}</div></section>
+            </div>}
+          </div>}
         </article> : mode==='plan'&&planRound===2?<section className="plan-complete"><small>本组三轮已完成</small><h2>这一组，完成了。</h2><p>答错的词已经自动进入强化复习，不需要现在一次记牢。</p><div><span><strong>{planMastered}</strong> 已掌握</span><span><strong>{planReinforce}</strong> 需强化</span></div><h3>还要继续来一组吗？</h3><div className="plan-complete-actions"><button onClick={startAnotherGroup}>继续一组</button><button className="primary" onClick={finishCheckin}>完成并打卡</button></div></section>:<div className="empty"><b>{mode==='plan'?'正在进入下一轮':mode==='review'?'今天已经复习完成':'这里还没有单词'}</b><p>{mode==='plan'?'准备下一种训练方式。':mode==='review'?'去学几个新词，明天再回来。':'换一个 List 或搜索试试。'}</p></div>}
         {current&&mode==='plan'&&activeDrill==='recognize'?<div className="plan-next"><button disabled={!revealed} onClick={()=>rate('known')}>认识了，继续 <span>→</span></button></div>:current&&mode!=='plan'&&<div className={`ratings ${!revealed?'waiting':''}`}>
           <button disabled={!revealed} onClick={()=>rate('again')}><kbd>1</kbd><span>生疏<small>10 分钟后</small></span></button>
@@ -178,7 +209,7 @@ export default function Home() {
 
     <footer><span>词穹 · 你的雅思词汇记忆空间</span><span>记录仅保存在当前浏览器 · 建议定期导出</span></footer>
 
-    {showLists&&<div className="overlay" onClick={()=>setShowLists(false)}><section className="panel list-panel" onClick={e=>e.stopPropagation()}><div className="panel-head"><div><small>全部词库</small><h3>选择一个 List</h3></div><button onClick={()=>setShowLists(false)}>×</button></div><div className="list-grid">{lists.map(l=>{const done=l.words.filter(w=>records[w.id]).length;return <button key={l.number} onClick={()=>chooseList(l.number)}><span>LIST {String(l.number).padStart(2,'0')}</span><b>{l.words.length} 词</b><i style={{width:`${l.words.length?done/l.words.length*100:0}%`}}/></button>})}</div></section></div>}
+    {showLists&&<div className="overlay" onClick={()=>setShowLists(false)}><section className="panel list-panel" onClick={e=>e.stopPropagation()}><div className="panel-head"><div><small>全部词库 · 22 个主题</small><h3>按原书主题选择 List</h3></div><button onClick={()=>setShowLists(false)}>×</button></div><div className="list-grid">{lists.map(l=>{const done=l.words.filter(w=>records[w.id]).length;const theme=themes.find(item=>item.list===l.number);return <button key={l.number} onClick={()=>chooseList(l.number)}><span>LIST {String(l.number).padStart(2,'0')} · {l.words.length} 词</span><b>{theme?.themeZh||'主题待核对'}</b><small>{theme?.themeEn||''}</small><i style={{width:`${l.words.length?done/l.words.length*100:0}%`}}/></button>})}</div></section></div>}
     {showData&&<div className="overlay" onClick={()=>setShowData(false)}><section className="panel data-panel" onClick={e=>e.stopPropagation()}><div className="panel-head"><div><small>学习记录</small><h3>把进度带在身边</h3></div><button onClick={()=>setShowData(false)}>×</button></div><p>学习记录只存在这台设备的浏览器中。你可以导出备份，再在另一台设备上导入。</p><div className="data-actions"><button className="primary-action" onClick={exportData}>导出记录</button><button onClick={()=>fileRef.current?.click()}>导入记录</button><input ref={fileRef} type="file" accept="application/json" hidden onChange={importData}/></div></section></div>}
     {showPlan&&<div className="overlay" onClick={()=>setShowPlan(false)}><section className="panel plan-panel" onClick={e=>e.stopPropagation()}><div className="panel-head"><div><small>学习计划</small><h3>把目标变成今天的一小步</h3></div><button onClick={()=>setShowPlan(false)}>×</button></div><label><span>IELTS 考试日期</span><input type="date" min={day()} value={examDate} onChange={e=>setExamDate(e.target.value)}/></label><div className="plan-summary"><div><strong>{remaining.toLocaleString()}</strong><small>剩余单词</small></div><div><strong>{examDate?daysLeft:'—'}</strong><small>可用天数</small></div><div><strong>{examDate?dailyTarget:'—'}</strong><small>每日新词</small></div></div><p>今日计划会优先安排到期复习，再用新词补足每日目标。计划与学习记录一样，只保存在当前浏览器。</p><button className="save-plan" disabled={!examDate} onClick={()=>{localStorage.setItem('ielts-exam-date',examDate);setMode('plan');setShowPlan(false)}}>保存并开始今日计划</button></section></div>}
   </main>
