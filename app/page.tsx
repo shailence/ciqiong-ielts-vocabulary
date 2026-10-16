@@ -65,7 +65,7 @@ export default function Home() {
     Promise.all([
       fetch(`${import.meta.env.BASE_URL||'/'}vocab.json`).then(r=>r.json()),
       fetch(`${import.meta.env.BASE_URL||'/'}data/list-themes.v1.json`).then(r=>r.json()),
-      fetch(`${import.meta.env.BASE_URL||'/'}data/vocab-expansions.demo.v1.json`).then(r=>r.json()),
+      fetch(`${import.meta.env.BASE_URL||'/'}data/vocab-expansions.v1.json`).then(r=>r.json()),
     ]).then(([vocab,themeData,extensionData])=>{setLists(vocab);setThemes(themeData.lists||[]);setExtensions(extensionData.entries||[])});
     const state=loadState(localStorage);
     setRecords(state.records);setExamDate(state.settings.examDate);setCheckins(state.checkins);setDailyPlans(state.dailyPlans);setActivity((state.sessions.dailyActivity as Record<string,ActivityDay>)||{});

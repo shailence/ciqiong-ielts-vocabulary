@@ -52,7 +52,7 @@ export type VocabularyExtension = {
     text: string;
     translationZh: string;
     target: string;
-    sourceType: "original-ielts-style" | "licensed" | "public-domain";
+    sourceType: "original-ielts-style" | "licensed" | "public-domain" | "user-provided-reference";
     sourceTitle?: string;
     sourceUrl?: string;
     copyrightStatus: string;

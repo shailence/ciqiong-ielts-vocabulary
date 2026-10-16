@@ -5,6 +5,7 @@ const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 const vocab = await readJson("public/vocab.json");
 const themes = await readJson("public/data/list-themes.v1.json");
 const demo = await readJson("public/data/vocab-expansions.demo.v1.json");
+const full = await readJson("public/data/vocab-expansions.v1.json");
 
 const lists = Array.isArray(vocab) ? vocab : vocab.lists;
 assert.equal(lists.length, 64, "原始词库必须保留 64 个 List");
@@ -55,4 +56,15 @@ for (const entry of demo.entries) {
   }
 }
 
-console.log(`V2 内容校验通过：${lists.length} Lists，${words.length} 原始词条，${demo.entries.length} 条拓展示范。`);
+assert.equal(full.entries.length, words.length, "完整拓展数据必须覆盖全部原始词条");
+assert.equal(new Set(full.entries.map((entry) => entry.wordId)).size, words.length, "完整拓展词条不得重复");
+for (const entry of full.entries) {
+  assert(ids.has(entry.wordId), `${entry.wordId} 不存在于原始词库`);
+  assert(entry.mnemonic, `${entry.wordId} 缺少联想记忆`);
+  assert(entry.relations?.length >= 2, `${entry.wordId} 缺少主题关联`);
+  assert(entry.collocations?.length >= 2, `${entry.wordId} 缺少语境搭配`);
+  assert(entry.example?.text && entry.example?.translationZh, `${entry.wordId} 缺少双语例句`);
+  assert(entry.exampleSource && entry.contentStatus, `${entry.wordId} 缺少来源或审核状态`);
+}
+
+console.log(`V2 内容校验通过：${lists.length} Lists，${words.length} 原始词条，${full.entries.length} 条结构化拓展。`);
