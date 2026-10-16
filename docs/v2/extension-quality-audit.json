@@ -1,0 +1,528 @@
+{
+  "generatedAt": "2026-10-16T10:08:29.059Z",
+  "conclusion": "结构覆盖完整；OCR 来源内容尚未完成逐条人工校对。",
+  "counts": {
+    "lists": 64,
+    "words": 3693,
+    "uniqueWordIds": 3693,
+    "extensions": 3693,
+    "missingExtensions": 0,
+    "orphanExtensions": 0,
+    "withExample": 3693,
+    "withTranslation": 3693,
+    "withMnemonic": 3693,
+    "withRelations": 3693,
+    "withCollocations": 3693,
+    "originalDraft": 198,
+    "ocrNeedsReview": 3495,
+    "exampleTargetNeedsReview": 70,
+    "punctuationNeedsReview": 206
+  },
+  "qualityPolicy": {
+    "structuralCoverageIsNotEditorialApproval": true,
+    "ocrEntriesAreDisplayedWithWarning": true,
+    "publicationRightsStillRequireOwnerConfirmation": true
+  },
+  "sampleIssues": [
+    {
+      "wordId": "l1-32",
+      "kind": "possibly-truncated",
+      "text": "A gust of wind blew the leaves off the"
+    },
+    {
+      "wordId": "l1-41",
+      "kind": "target-not-found",
+      "text": "Some types of minerals are made pos A i og ln “ a a ” SN TH Se / “ES o ® 2) oa 3 %. > 4 LA"
+    },
+    {
+      "wordId": "l1-41",
+      "kind": "possibly-truncated",
+      "text": "Some types of minerals are made pos A i og ln “ a a ” SN TH Se / “ES o ® 2) oa 3 %. > 4 LA"
+    },
+    {
+      "wordId": "l2-31",
+      "kind": "possibly-truncated",
+      "text": "ve heard from reliable sources that the SR Rage Tn"
+    },
+    {
+      "wordId": "l3-15",
+      "kind": "possibly-truncated",
+      "text": "A rainbow is usually seen after a heavy"
+    },
+    {
+      "wordId": "l3-29",
+      "kind": "possibly-truncated",
+      "text": "The house on the hill overlooks the village. MINE BO BEF BT BURT BAR EE。 [#1 be easily overlooked over ( southern /'sadan"
+    },
+    {
+      "wordId": "l3-43",
+      "kind": "possibly-truncated",
+      "text": "We left the car and struck out along the muddy"
+    },
+    {
+      "wordId": "l4-4",
+      "kind": "possibly-truncated",
+      "text": "There are wide gaps in my knowledge debs gra 1,"
+    },
+    {
+      "wordId": "l4-5",
+      "kind": "possibly-truncated",
+      "text": "You're all doing a splendid job; keep up the"
+    },
+    {
+      "wordId": "l4-9",
+      "kind": "possibly-truncated",
+      "text": "There is an interesting programme on"
+    },
+    {
+      "wordId": "l4-25",
+      "kind": "possibly-truncated",
+      "text": "Our week on the tropical island was heaven. paradise /paeredals nm solar sunset paradise"
+    },
+    {
+      "wordId": "l4-26",
+      "kind": "possibly-truncated",
+      "text": "This club is a sportsman’s paradise. sunshine /SAnJarm/ n"
+    },
+    {
+      "wordId": "l4-41",
+      "kind": "possibly-truncated",
+      "text": "She attempted to drown herself in the EE"
+    },
+    {
+      "wordId": "l4-44",
+      "kind": "target-not-found",
+      "text": "In a moment more, the crowd began to forth from the doors of the church."
+    },
+    {
+      "wordId": "l5-30",
+      "kind": "possibly-truncated",
+      "text": "This area changed quickly from arable land desert. plough /plav/ (=plow) n EB v #f (i) 024° a mT"
+    },
+    {
+      "wordId": "l6-28",
+      "kind": "possibly-truncated",
+      "text": "We sat in the back row, sucking mints:: Moneta EES"
+    },
+    {
+      "wordId": "l6-36",
+      "kind": "target-not-found",
+      "text": "Sea surface temperatures and atmospheric"
+    },
+    {
+      "wordId": "l6-36",
+      "kind": "possibly-truncated",
+      "text": "Sea surface temperatures and atmospheric"
+    },
+    {
+      "wordId": "l6-49",
+      "kind": "possibly-truncated",
+      "text": "The tape would self-destruct in twenty"
+    },
+    {
+      "wordId": "l7-19",
+      "kind": "target-not-found",
+      "text": "Lions and tigers are camivores."
+    },
+    {
+      "wordId": "l8-5",
+      "kind": "possibly-truncated",
+      "text": "The insect bit him and drew blood from his ("
+    },
+    {
+      "wordId": "l8-23",
+      "kind": "possibly-truncated",
+      "text": "The professor lived in an ivory tower"
+    },
+    {
+      "wordId": "l8-24",
+      "kind": "target-not-found",
+      "text": "The young goat was just beginning to grow hors."
+    },
+    {
+      "wordId": "l8-37",
+      "kind": "possibly-truncated",
+      "text": "There were lots of buffaloes in the North America 100 years ago. 100 ee 。 horse hos ng"
+    },
+    {
+      "wordId": "l9-32",
+      "kind": "possibly-truncated",
+      "text": "She showed great potential as an actress. intelligence /m'telidzans/ 0 BE, 8h; BR, BR excrete potential flexi"
+    },
+    {
+      "wordId": "l9-42",
+      "kind": "possibly-truncated",
+      "text": "They traced the criminal to a house in the"
+    },
+    {
+      "wordId": "l9-49",
+      "kind": "target-not-found",
+      "text": "| underwent so much suffering in early years LW Ee"
+    },
+    {
+      "wordId": "l9-49",
+      "kind": "possibly-truncated",
+      "text": "| underwent so much suffering in early years LW Ee"
+    },
+    {
+      "wordId": "l10-38",
+      "kind": "possibly-truncated",
+      "text": "Is there a basic substance that everything else"
+    },
+    {
+      "wordId": "l10-41",
+      "kind": "target-not-found",
+      "text": "1 know that the majority of the energy we a a 2: \\@ E45: 1: he it (& cn ——— near 。"
+    },
+    {
+      "wordId": "l10-41",
+      "kind": "possibly-truncated",
+      "text": "1 know that the majority of the energy we a a 2: \\@ E45: 1: he it (& cn ——— near 。"
+    },
+    {
+      "wordId": "l10-53",
+      "kind": "possibly-truncated",
+      "text": "When you are sick, you should drink plenty fluids. solid 1/Spl5d/ n ii E"
+    },
+    {
+      "wordId": "l10-55",
+      "kind": "possibly-truncated",
+      "text": "In planet formation, as in adolescence, you've ]"
+    },
+    {
+      "wordId": "l11-8",
+      "kind": "target-not-found",
+      "text": "[ is = 1 and fo ann side \\ i LE 。 wo Te Ra fragment /fregmont/ n. BR, RUF /fragment v ( He was still in bad condition and could give diol dwamble sesh = dioactive 、 cme mm Re EE ee"
+    },
+    {
+      "wordId": "l11-8",
+      "kind": "possibly-truncated",
+      "text": "[ is = 1 and fo ann side \\ i LE 。 wo Te Ra fragment /fregmont/ n. BR, RUF /fragment v ( He was still in bad condition and could give diol dwamble sesh = dioactive 、 cme mm Re EE ee"
+    },
+    {
+      "wordId": "l11-13",
+      "kind": "possibly-truncated",
+      "text": "The man lost in the desert was desperate for Kis “ desperado ("
+    },
+    {
+      "wordId": "l11-46",
+      "kind": "possibly-truncated",
+      "text": "Good teachers are those who can motivate =] el ins"
+    },
+    {
+      "wordId": "l11-49",
+      "kind": "target-not-found",
+      "text": "The car ran down the bridge under its own"
+    },
+    {
+      "wordId": "l11-49",
+      "kind": "possibly-truncated",
+      "text": "The car ran down the bridge under its own"
+    },
+    {
+      "wordId": "l12-4",
+      "kind": "possibly-truncated",
+      "text": "It requires an athlete to have great skill, cool ，"
+    },
+    {
+      "wordId": "l12-7",
+      "kind": "target-not-found",
+      "text": "This is my first time to eat in your dining"
+    },
+    {
+      "wordId": "l12-7",
+      "kind": "possibly-truncated",
+      "text": "This is my first time to eat in your dining"
+    },
+    {
+      "wordId": "l12-27",
+      "kind": "possibly-truncated",
+      "text": "She was my personal tutor at university. {12] tutorial n. aa lecturer /'lektfara/"
+    },
+    {
+      "wordId": "l12-62",
+      "kind": "possibly-truncated",
+      "text": "1t is important to check when the laboratory can do the tests. experiment /ik'spersmant/"
+    },
+    {
+      "wordId": "l13-11",
+      "kind": "possibly-truncated",
+      "text": "This study was published by two journals repute. coverage 1KkAvarld3/ n"
+    },
+    {
+      "wordId": "l13-26",
+      "kind": "target-not-found",
+      "text": "There are different categories of books in a library."
+    },
+    {
+      "wordId": "l13-27",
+      "kind": "possibly-truncated",
+      "text": "We made an inventory of everything in the old museum5 a content"
+    },
+    {
+      "wordId": "l14-33",
+      "kind": "possibly-truncated",
+      "text": "We should create a table for the sales data. matrix /merks/ 。 1"
+    },
+    {
+      "wordId": "l14-34",
+      "kind": "possibly-truncated",
+      "text": "The room is 7 metres in length and 5 metres in breadth. by decimal /'desimol/ 。 adl"
+    },
+    {
+      "wordId": "l14-51",
+      "kind": "possibly-truncated",
+      "text": "In front of the mountain is a river of great width. no length lent"
+    },
+    {
+      "wordId": "l14-54",
+      "kind": "possibly-truncated",
+      "text": "The ratio of 3 to 9 is the same as that of 9 to 3"
+    },
+    {
+      "wordId": "l15-7",
+      "kind": "target-not-found",
+      "text": "In designing this device, it is necessary to"
+    },
+    {
+      "wordId": "l15-7",
+      "kind": "possibly-truncated",
+      "text": "In designing this device, it is necessary to"
+    },
+    {
+      "wordId": "l15-20",
+      "kind": "target-not-found",
+      "text": "The formula for water is H,0."
+    },
+    {
+      "wordId": "l15-36",
+      "kind": "target-not-found",
+      "text": "She is currently doing a business studies"
+    },
+    {
+      "wordId": "l15-36",
+      "kind": "possibly-truncated",
+      "text": "She is currently doing a business studies"
+    },
+    {
+      "wordId": "l16-1",
+      "kind": "possibly-truncated",
+      "text": "In this case, | recommended that you consult"
+    },
+    {
+      "wordId": "l16-19",
+      "kind": "possibly-truncated",
+      "text": "This painting is a copy of the one in the museum. print /print/ Y ET a"
+    },
+    {
+      "wordId": "l16-21",
+      "kind": "possibly-truncated",
+      "text": "This essay represents a considerable improvement"
+    },
+    {
+      "wordId": "l16-49",
+      "kind": "target-not-found",
+      "text": "The way he talked implied that he was not willing to accept the agreement. red She deliberated the question before she made an answer."
+    },
+    {
+      "wordId": "l17-20",
+      "kind": "possibly-truncated",
+      "text": "Htis a good idea to do some research before you"
+    },
+    {
+      "wordId": "l17-23",
+      "kind": "target-not-found",
+      "text": "I have several queries about the work you gave me."
+    },
+    {
+      "wordId": "l18-28",
+      "kind": "target-not-found",
+      "text": "My cousin applied to four universities and was accepted by all of them."
+    },
+    {
+      "wordId": "l18-41",
+      "kind": "target-not-found",
+      "text": "The camera comes with several useful accessories."
+    },
+    {
+      "wordId": "l18-58",
+      "kind": "target-not-found",
+      "text": "President Bush's speech was broadcast on national In your Web browser's cache are the most in recent Web files that you have downloaded."
+    },
+    {
+      "wordId": "l19-3",
+      "kind": "target-not-found",
+      "text": "A newly-devised microcomputer can act as a guide for a blind person."
+    },
+    {
+      "wordId": "l19-30",
+      "kind": "possibly-truncated",
+      "text": "You can distil the water from the lake and make to it drinkable. drainage condense filter sewage refine Al"
+    },
+    {
+      "wordId": "l19-43",
+      "kind": "target-not-found",
+      "text": "There will be more than one person who can"
+    },
+    {
+      "wordId": "l19-43",
+      "kind": "possibly-truncated",
+      "text": "There will be more than one person who can"
+    },
+    {
+      "wordId": "l21-30",
+      "kind": "possibly-truncated",
+      "text": "He was known for his poor grammar and"
+    },
+    {
+      "wordId": "l21-45",
+      "kind": "possibly-truncated",
+      "text": "ACP is the logogram of English of the African, 。"
+    },
+    {
+      "wordId": "l21-46",
+      "kind": "possibly-truncated",
+      "text": "His vocabulary was sound and his grammar was excellent' kB vad"
+    },
+    {
+      "wordId": "l22-6",
+      "kind": "possibly-truncated",
+      "text": "You should cross out this preposition in the prefix noun adjective suffix singular adverb abbreviation plural preposition synonym pronoun antonym verb"
+    },
+    {
+      "wordId": "l22-12",
+      "kind": "target-not-found",
+      "text": "["
+    },
+    {
+      "wordId": "l22-12",
+      "kind": "possibly-truncated",
+      "text": "["
+    },
+    {
+      "wordId": "l22-13",
+      "kind": "possibly-truncated",
+      "text": "No matter how well a poem is translated, something of the spirit of the original work is"
+    },
+    {
+      "wordId": "l22-28",
+      "kind": "possibly-truncated",
+      "text": "The play is in rehearsal now:: |"
+    },
+    {
+      "wordId": "l22-35",
+      "kind": "possibly-truncated",
+      "text": "We were paid to leaflet advertisements in the shopping mall. commentator messenger leaflet exponent editor announcer typist"
+    },
+    {
+      "wordId": "l22-38",
+      "kind": "possibly-truncated",
+      "text": "We were paid to leaflet advertisements in the shopping mall. commentator messenger leaflet exponent editor announcer typist"
+    },
+    {
+      "wordId": "l22-49",
+      "kind": "possibly-truncated",
+      "text": "Listening to music is the favourite pastime El) 2)"
+    },
+    {
+      "wordId": "l23-7",
+      "kind": "possibly-truncated",
+      "text": "We can use computers to simulate many"
+    },
+    {
+      "wordId": "l23-11",
+      "kind": "possibly-truncated",
+      "text": "Various performers will present a concert to"
+    },
+    {
+      "wordId": "l23-16",
+      "kind": "target-not-found",
+      "text": "Dwayne Johnson talked about his experiences starring in comedies."
+    },
+    {
+      "wordId": "l23-18",
+      "kind": "possibly-truncated",
+      "text": "lt is this cartoon that brought the animation ="
+    },
+    {
+      "wordId": "l23-23",
+      "kind": "target-not-found",
+      "text": "The original designs were made by highly skilled craftsmen."
+    },
+    {
+      "wordId": "l23-26",
+      "kind": "possibly-truncated",
+      "text": "The scene is perfect when you see the sun rising ， BRGRE Ho Latina RE es 5 Fest oh 8 oN ee:"
+    },
+    {
+      "wordId": "l23-32",
+      "kind": "possibly-truncated",
+      "text": "They were selected from many applicants:-"
+    },
+    {
+      "wordId": "l24-4",
+      "kind": "possibly-truncated",
+      "text": "The company had sponsored the football"
+    },
+    {
+      "wordId": "l24-51",
+      "kind": "target-not-found",
+      "text": "What fun it is to throw snowballs, and to on the ice!"
+    },
+    {
+      "wordId": "l24-60",
+      "kind": "possibly-truncated",
+      "text": "The robber hopped into his car and rushed off. skate bounce /bauns/ ("
+    },
+    {
+      "wordId": "l25-11",
+      "kind": "target-not-found",
+      "text": "She strode across the stage with confidence."
+    },
+    {
+      "wordId": "l25-18",
+      "kind": "target-not-found",
+      "text": "He bent his walking direction toward me."
+    },
+    {
+      "wordId": "l25-23",
+      "kind": "possibly-truncated",
+      "text": "These souvenirs were gathered from all"
+    },
+    {
+      "wordId": "l25-44",
+      "kind": "possibly-truncated",
+      "text": "She wetted her hair and then put shampoo on it"
+    },
+    {
+      "wordId": "l26-2",
+      "kind": "possibly-truncated",
+      "text": "A mattress is filled with feathers, cotton, or straw. he after carpet /kapst HT noHhBE, EE, EBB"
+    },
+    {
+      "wordId": "l26-5",
+      "kind": "possibly-truncated",
+      "text": "1wiped my shoes on the mat before | came in. Ft IRIE ERE TREE of cushion /kufan/ nm,"
+    },
+    {
+      "wordId": "l26-6",
+      "kind": "possibly-truncated",
+      "text": "She always kept a pad and a pencil by the"
+    },
+    {
+      "wordId": "l26-8",
+      "kind": "possibly-truncated",
+      "text": "She huddled herself in the blanket. fh EEF quilt BF"
+    },
+    {
+      "wordId": "l26-28",
+      "kind": "possibly-truncated",
+      "text": "The front cover of the novel has been torn AR"
+    },
+    {
+      "wordId": "l26-39",
+      "kind": "possibly-truncated",
+      "text": "Look out! You could fall off the edge here! done. rim /rim/ n ("
+    }
+  ]
+}

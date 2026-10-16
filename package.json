@@ -13,6 +13,7 @@
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "test:v2-content": "node scripts/validate-v2-content.mjs",
+    "audit:extensions": "node scripts/audit-extension-quality.mjs",
     "test:v2-core": "node --experimental-strip-types --test tests/v2-core.test.ts",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"

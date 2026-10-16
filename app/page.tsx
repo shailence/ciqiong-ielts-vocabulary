@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { localDateKey } from "./v2/date";
 import { isDue, REVIEW_INTERVALS, scheduleReview } from "./v2/scheduler";
-import { isAppStateV2, loadState, saveState } from "./v2/storage";
+import { isAppStateV2, loadState, saveState, V2_BACKUP_KEY, V2_STORAGE_KEY } from "./v2/storage";
 import type { AppStateV2, Checkin, Drill, ListTheme, RecordItem, Records, VocabularyExtension } from "./v2/types";
 
 type Word = { id: string; order: number; word: string; definition: string; phonetic?: string };
 type VocabList = { number: number; title: string; words: Word[] };
-type ViewMode = "home"|"learn"|"review"|"saved"|"plan"|"checkin"|"records";
+type ViewMode = "home"|"learn"|"review"|"saved"|"plan"|"checkin"|"records"|"reading";
 type ActivityDay = { attempts:number; learned:number; reviews:number; correct:number; seconds:number };
 const drillOrder:Drill[]=["recognize","recall","dictation"];
 const planLabels=["认识与听音","四选一辨义","听音拼写"];
@@ -58,24 +58,32 @@ export default function Home() {
   const [customExtraCount,setCustomExtraCount]=useState(15);
   const [isExtraSession,setIsExtraSession]=useState(false);
   const [completedGroupIds,setCompletedGroupIds]=useState<string[]>([]);
+  const [readingTheme,setReadingTheme]=useState(1);
+  const [readingIndex,setReadingIndex]=useState(0);
+  const [readingChoice,setReadingChoice]=useState("");
+  const [readingScore,setReadingScore]=useState(0);
+  const [dataError,setDataError]=useState("");
   const fileRef=useRef<HTMLInputElement>(null);
   const interactionStarted=useRef(Date.now());
+  const submitting=useRef(false);
 
   useEffect(()=>{
     Promise.all([
       fetch(`${import.meta.env.BASE_URL||'/'}vocab.json`).then(r=>r.json()),
       fetch(`${import.meta.env.BASE_URL||'/'}data/list-themes.v1.json`).then(r=>r.json()),
       fetch(`${import.meta.env.BASE_URL||'/'}data/vocab-expansions.v1.json`).then(r=>r.json()),
-    ]).then(([vocab,themeData,extensionData])=>{setLists(vocab);setThemes(themeData.lists||[]);setExtensions(extensionData.entries||[])});
+    ]).then(([vocab,themeData,extensionData])=>{setLists(vocab);setThemes(themeData.lists||[]);setExtensions(extensionData.entries||[])}).catch(()=>setDataError('词库加载失败，请刷新页面重试。'));
     const state=loadState(localStorage);
     setRecords(state.records);setExamDate(state.settings.examDate);setCheckins(state.checkins);setDailyPlans(state.dailyPlans);setActivity((state.sessions.dailyActivity as Record<string,ActivityDay>)||{});
+    const active=state.sessions.activePlan as {date?:string;ids?:string[];round?:number;extra?:boolean}|undefined;
+    if(active?.date===day()&&active.ids?.length){setPlanIds(active.ids);setPlanRound(Math.min(2,Math.max(0,active.round||0)));setIsExtraSession(Boolean(active.extra))}
     setTodayCheckin(state.checkins.find(v=>v.date===day())||null);setHydrated(true);
   },[]);
   useEffect(()=>{
     if(!hydrated)return;
-    const state:AppStateV2={schemaVersion:2,records,settings:{examDate},checkins,dailyPlans,sessions:{dailyActivity:activity},meta:{updatedAt:new Date().toISOString()}};
+    const state:AppStateV2={schemaVersion:2,records,settings:{examDate},checkins,dailyPlans,sessions:{dailyActivity:activity,...(mode==='plan'&&planIds.length?{activePlan:{date:day(),ids:planIds,round:planRound,extra:isExtraSession}}:{})},meta:{updatedAt:new Date().toISOString()}};
     saveState(localStorage,state);
-  },[hydrated,records,examDate,checkins,dailyPlans,activity]);
+  },[hydrated,records,examDate,checkins,dailyPlans,activity,mode,planIds,planRound,isExtraSession]);
 
   const allWords=useMemo(()=>lists.flatMap(l=>l.words.map(w=>({...w,list:l.number}))),[lists]);
   const activeTheme=themes.find(theme=>theme.list===activeList);
@@ -93,7 +101,8 @@ export default function Home() {
   },[lists,allWords,activeList,mode,records,query,dailyTarget,planIds,planRound]);
   useEffect(()=>{setIndex(0);setRevealed(false);setAnswer("")},[activeList,mode,query,drill]);
   const current=activeWords[index%Math.max(activeWords.length,1)];
-  const currentExtension=extensions.find(entry=>entry.wordId===current?.id);
+  const extensionMap=useMemo(()=>new Map(extensions.map(entry=>[entry.wordId,entry])),[extensions]);
+  const currentExtension=current?extensionMap.get(current.id):undefined;
   const currentPasses=current?(records[current.id]?.passes?.[day()]||[]):[];
   const activeDrill:Drill=mode==='plan'?drillOrder[planRound]:drill;
   const due=allWords.filter(w=>records[w.id]&&isDue(records[w.id].next)).length;
@@ -101,7 +110,7 @@ export default function Home() {
   const mastered=Object.values(records).filter(record=>record.rating==='known').length;
   const masteryRate=Object.keys(records).length?Math.round(mastered/Object.keys(records).length*100):0;
   const monthLabel=`${calendarMonth.getFullYear()} 年 ${calendarMonth.getMonth()+1} 月`;
-  const calendarCells=useMemo(()=>{const year=calendarMonth.getFullYear();const month=calendarMonth.getMonth();const first=(new Date(year,month,1).getDay()+6)%7;const count=new Date(year,month+1,0).getDate();return [...Array(first).fill(null),...Array.from({length:count},(_,i)=>localDateKey(new Date(year,month,i+1)))]},[calendarMonth]);
+  const calendarCells=useMemo(()=>{const year=calendarMonth.getFullYear();const month=calendarMonth.getMonth();const first=(new Date(year,month,1).getDay()+6)%7;const count=new Date(year,month+1,0).getDate();const cells=[...Array(first).fill(null),...Array.from({length:count},(_,i)=>localDateKey(new Date(year,month,i+1)))];return [...cells,...Array(Math.max(0,42-cells.length)).fill(null)]},[calendarMonth]);
   const selectedActivity=activity[selectedDate]||{attempts:0,learned:0,reviews:0,correct:0,seconds:0};
   const selectedLegacyCount=Object.values(records).filter(record=>record.last===selectedDate).length;
   const selectedCheckin=checkins.find(entry=>entry.date===selectedDate);
@@ -111,6 +120,10 @@ export default function Home() {
   const planReinforce=Math.max(0,planIds.length-planMastered);
   const todayActivity=activity[day()]||{attempts:0,learned:0,reviews:0,correct:0,seconds:0};
   const todayAccuracy=todayActivity.attempts?Math.round(todayActivity.correct/todayActivity.attempts*100):0;
+  const readingEntries=useMemo(()=>extensions.filter(entry=>Number(entry.chapterId)===readingTheme&&entry.example?.text&&entry.example?.translationZh).slice(0,10),[extensions,readingTheme]);
+  const readingEntry=readingEntries[readingIndex];
+  const readingWord=readingEntry?allWords.find(word=>word.id===readingEntry.wordId):undefined;
+  const readingOptions=useMemo(()=>{if(!readingWord)return[];const same=allWords.filter(word=>word.list===readingWord.list&&word.id!==readingWord.id).slice(0,3);return [readingWord,...same].sort((a,b)=>((a.order*13)%7)-((b.order*13)%7))},[readingWord,allWords]);
 
   useEffect(()=>{if(mode==='plan'&&planIds.length&&activeWords.length===0&&planRound<2){setPlanRound(r=>r+1);setIndex(0);setRevealed(false);setAnswer("");setChoiceSelected("")}},[mode,planIds.length,activeWords.length,planRound]);
   useEffect(()=>{if(mode==='plan'&&activeDrill==='recognize'&&current){const t=setTimeout(speak,180);return()=>clearTimeout(t)}},[mode,activeDrill,current?.id]);
@@ -118,25 +131,26 @@ export default function Home() {
   useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if((e.target as HTMLElement)?.tagName==='INPUT')return;if(e.code==='Space'){e.preventDefault();setRevealed(true)}if(e.key==='1')rate('again');if(e.key==='2')rate('hard');if(e.key==='3')rate('known')};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[current,activeWords.length,records,revealed]);
 
   function rate(rating:RecordItem['rating'],force=false){
-    if(!current||(!revealed&&!force)) return;
+    if(!current||(!revealed&&!force)||submitting.current) return;
+    submitting.current=true;
     const old=records[current.id]; let stage=old?.stage||0;
     const elapsed=Math.max(1,Math.min(120,Math.round((Date.now()-interactionStarted.current)/1000)));
     setActivity(value=>{const date=day();const prior=value[date]||{attempts:0,learned:0,reviews:0,correct:0,seconds:0};return {...value,[date]:{attempts:prior.attempts+1,learned:prior.learned+(old?0:1),reviews:prior.reviews+(old?1:0),correct:prior.correct+(rating==='known'?1:0),seconds:prior.seconds+elapsed}}});interactionStarted.current=Date.now();
     if(mode==='plan'&&activeDrill==='recall'){
       const nextPasses=[...new Set([...currentPasses,activeDrill])];
       setRecords(v=>({...v,[current.id]:{...(v[current.id]||{}),stage,next:day(),last:day(),rating,planNew:true,passes:{...(v[current.id]?.passes||{}),[day()]:nextPasses}}}));
-      setAnswer("");setChoiceSelected("");setRevealed(false);setShowExpansion(false);setIndex(0);return;
+      setAnswer("");setChoiceSelected("");setRevealed(false);setShowExpansion(false);setIndex(0);setTimeout(()=>{submitting.current=false},0);return;
     }
     const scheduled=scheduleReview(old,rating);stage=scheduled.stage;const next=scheduled.next;
     const passes=mode==='plan'?[...new Set([...currentPasses,activeDrill])]:currentPasses;
     setRecords(v=>({...v,[current.id]:{...v[current.id],stage,next,last:day(),rating,planNew:false,completed:day(),passes:mode==='plan'?{...(v[current.id]?.passes||{}),[day()]:passes}:v[current.id]?.passes}}));
-    setAnswer("");setChoiceSelected("");setRevealed(false);setShowExpansion(false); setIndex(mode==='plan'?0:i=>(i+1)%Math.max(activeWords.length,1));
+    setAnswer("");setChoiceSelected("");setRevealed(false);setShowExpansion(false); setIndex(mode==='plan'?0:i=>(i+1)%Math.max(activeWords.length,1));setTimeout(()=>{submitting.current=false},0);
   }
   function speak(){if(!current)return; speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(current.word);u.lang='en-GB';u.rate=.86;speechSynthesis.speak(u)}
   function checkAnswer(){if(!answer.trim())return;setRevealed(true)}
   function choosePlanOption(option:string,correct:boolean){if(revealed)return;setChoiceSelected(option);setRevealed(true);window.setTimeout(()=>rate(correct?'known':'hard',true),700)}
   function submitPlanSpelling(submitted=answer){if(!current||!submitted.trim()||revealed)return;setAnswer(submitted);const correct=submitted.trim().toLowerCase()===current.word.toLowerCase();setRevealed(true);window.setTimeout(()=>rate(correct?'known':'again',true),850)}
-  function beginPlan(ids:string[],extra=false){if(!ids.length)return;setPlanIds(ids);setIsExtraSession(extra);setPlanRound(0);setIndex(0);setRevealed(false);setAnswer('');setChoiceSelected('');setMode('plan')}
+  function beginPlan(ids:string[],extra=false){if(!ids.length)return;submitting.current=false;setPlanIds(ids);setIsExtraSession(extra);setPlanRound(0);setIndex(0);setRevealed(false);setAnswer('');setChoiceSelected('');setMode('plan')}
   function continueWithCount(count:number){const requested=Math.max(1,Math.floor(count));const sameList=allWords.filter(w=>w.list===activeList&&!records[w.id]&&!planIds.includes(w.id));const following=allWords.filter(w=>w.list>activeList&&!records[w.id]&&!planIds.includes(w.id));const candidates=[...sameList,...following].slice(0,requested);if(!candidates.length){alert('当前词库没有未学单词，请选择其他 List。');setShowLists(true);return}if(candidates.length<requested)alert(`当前及后续 List 仅剩 ${candidates.length} 个未学单词，本轮将学习这些词。`);beginPlan(candidates.map(w=>w.id),true)}
   function startAnotherGroup(){continueWithCount(Math.max(1,planIds.length||dailyTarget))}
   function reinforceMistakes(){const source=completedGroupIds.length?completedGroupIds:planIds;const ids=source.filter(id=>records[id]&&records[id].rating!=='known');if(!ids.length){alert('本轮没有需要强化的错词。');return}beginPlan(ids,true)}
@@ -147,7 +161,9 @@ export default function Home() {
   function chooseList(n:number){setActiveList(n);setMode('learn');setQuery('');setShowLists(false)}
   function openRelatedWord(wordId:string){const target=allWords.find(word=>word.id===wordId);if(!target)return;setActiveList(target.list);setMode('learn');setQuery('');setIndex(Math.max(0,target.order-1));setRevealed(true);setShowExpansion(false)}
   function exportData(){const snapshot:AppStateV2={schemaVersion:2,records,settings:{examDate},checkins,dailyPlans,sessions:{dailyActivity:activity},meta:{updatedAt:new Date().toISOString()}};const blob=new Blob([JSON.stringify(snapshot,null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`词穹完整学习记录-${day()}.json`;a.click();URL.revokeObjectURL(a.href)}
-  function importData(e:React.ChangeEvent<HTMLInputElement>){const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const value=JSON.parse(String(r.result));if(isAppStateV2(value)){setRecords(value.records);setExamDate(value.settings.examDate);setCheckins(value.checkins);setDailyPlans(value.dailyPlans);setActivity((value.sessions.dailyActivity as Record<string,ActivityDay>)||{})}else if(value&&typeof value==='object'){setRecords(value as Records)}else throw new Error();setShowData(false)}catch{alert('无法读取这份记录文件')}};r.readAsText(f)}
+  function applyImported(value:AppStateV2){setRecords(value.records);setExamDate(value.settings.examDate);setCheckins(value.checkins);setDailyPlans(value.dailyPlans);setActivity((value.sessions.dailyActivity as Record<string,ActivityDay>)||{});setTodayCheckin(value.checkins.find(item=>item.date===day())||null)}
+  function importData(e:React.ChangeEvent<HTMLInputElement>){const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const value=JSON.parse(String(r.result));if(!isAppStateV2(value))throw new Error();const current=localStorage.getItem(V2_STORAGE_KEY);if(current)localStorage.setItem(V2_BACKUP_KEY,current);applyImported(value);setShowData(false);alert('记录已恢复，导入前的数据已自动保留为上一次备份。')}catch{alert('无法读取这份记录文件：文件格式或版本不正确。')}finally{e.target.value=''}};r.readAsText(f)}
+  function restoreBackup(){try{const raw=localStorage.getItem(V2_BACKUP_KEY);const value=raw?JSON.parse(raw):null;if(!isAppStateV2(value))throw new Error();const current=localStorage.getItem(V2_STORAGE_KEY);applyImported(value);if(current)localStorage.setItem(V2_BACKUP_KEY,current);setShowData(false);alert('已恢复上一次备份。')}catch{alert('当前设备没有可恢复的有效备份。')}}
 
   return <main>
     <header className={`topbar ${mode==='home'?'home-topbar':''}`}>
@@ -158,6 +174,7 @@ export default function Home() {
         <button className={mode==='plan'||mode==='checkin'?'active':''} onClick={openTodayPlan}>今日计划 {todayCheckin&&<b className="checked">✓</b>}</button>
         <button className={mode==='review'?'active':''} onClick={()=>openView('review')}>今日复习 <b>{due}</b></button>
         <button className={mode==='records'?'active':''} onClick={()=>openView('records')}>学习记录</button>
+        <button className={mode==='reading'?'active':''} onClick={()=>openView('reading')}>主题阅读</button>
       </nav>
       <button className="data-btn" onClick={()=>setShowData(true)}>记录 · {progress}%</button>
     </header>
@@ -187,12 +204,19 @@ export default function Home() {
       <section className="continue-panel"><h2>还想继续学一会儿？</h2><p>选择额外学习数量，不会覆盖今天的打卡记录。</p><div className="extra-options">{[10,20,30].map(value=><button key={value} className={extraCount===value?'active':''} onClick={()=>setExtraCount(value)}>{value} 词</button>)}<label className={extraCount===-1?'active':''}><input type="radio" checked={extraCount===-1} onChange={()=>setExtraCount(-1)}/>自定义 <input type="number" min="1" max="100" value={customExtraCount} onFocus={()=>setExtraCount(-1)} onChange={event=>setCustomExtraCount(Math.max(1,Number(event.target.value)||1))}/></label></div><button className="continue-primary" onClick={()=>continueWithCount(extraCount===-1?customExtraCount:extraCount)}>继续学习 →</button><div className="checkin-links"><button onClick={()=>setShowLists(true)}>选择其他 List</button><button onClick={reinforceMistakes}>强化本轮错词</button><button onClick={()=>setMode('home')}>返回首页</button></div></section>
     </section>}
 
+    {dataError&&<div className="data-error" role="alert">{dataError}</div>}
+
     {mode==='records'&&<section className="records-page">
       <header><div><p className="eyebrow">LEARNING HISTORY</p><h1>学习记录</h1><span>所有数据来自当前设备的真实学习行为。</span></div><button onClick={()=>setShowData(true)}>导入 / 导出</button></header>
       <div className="records-layout"><div className="records-calendar"><div className="records-month"><button onClick={()=>setCalendarMonth(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1))}>‹</button><strong>{monthLabel}</strong><button onClick={()=>setCalendarMonth(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1))}>›</button></div><div className="calendar-week">{['一','二','三','四','五','六','日'].map(label=><span key={label}>{label}</span>)}</div><div className="calendar-days large">{calendarCells.map((date,index)=>date?<button key={date} className={`${date===day()?'today':''} ${selectedDate===date?'selected':''} ${checkins.some(item=>item.date===date)?'complete':''}`} onClick={()=>setSelectedDate(date)}><span>{Number(date.slice(-2))}</span>{(activity[date]?.attempts||Object.values(records).some(record=>record.last===date))&&<i/>}</button>:<i key={`blank-${index}`}/>)}</div></div><aside className="day-detail"><small>日期详情</small><h2>{selectedDate}</h2><div><span><b>{selectedActivity.attempts||selectedLegacyCount}</b>学习次数</span><span><b>{selectedActivity.reviews}</b>复习次数</span><span><b>{Math.ceil(selectedActivity.seconds/60)}</b>学习分钟</span><span><b>{selectedCheckin?'已完成':'未打卡'}</b>完成状态</span></div><p>{selectedActivity.attempts?`正确反馈 ${selectedActivity.correct} 次；新学 ${selectedActivity.learned} 个词。`:'这一天还没有可记录的学习操作。'}</p></aside></div>
     </section>}
 
-    {mode!=='home'&&mode!=='checkin'&&mode!=='records'&&<section className={`workspace ${mode==='plan'?'plan-only':''}`}>
+    {mode==='reading'&&<section className="reading-page">
+      <header><div><p className="eyebrow">THEME READING</p><h1>主题阅读训练</h1><p>用真实词库的语境例句完成选词理解；答完立即显示翻译与来源状态。</p></div><label>主题<select value={readingTheme} onChange={event=>{setReadingTheme(Number(event.target.value));setReadingIndex(0);setReadingChoice('');setReadingScore(0)}}>{Array.from(new Map(themes.map(theme=>[theme.chapterNumbers[0],theme])).values()).map(theme=><option key={theme.chapterNumbers[0]} value={theme.chapterNumbers[0]}>Chapter {String(theme.chapterNumbers[0]).padStart(2,'0')} · {theme.themeZh}</option>)}</select></label></header>
+      {readingEntry&&readingWord?<article className="reading-card"><div className="reading-progress"><span>{readingIndex+1} / {readingEntries.length}</span><b>得分 {readingScore}</b></div><p className="reading-sentence">{readingEntry.example.text.replace(new RegExp(`\\b${readingEntry.example.target.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`,'i'),'______')}</p><small>选择最符合语境的词</small><div className="reading-options">{readingOptions.map(option=><button key={option.id} disabled={Boolean(readingChoice)} className={readingChoice?(option.id===readingWord.id?'correct':readingChoice===option.id?'wrong':''):''} onClick={()=>{setReadingChoice(option.id);if(option.id===readingWord.id)setReadingScore(score=>score+1)}}>{option.word}</button>)}</div>{readingChoice&&<div className="reading-answer"><b>{readingWord.word}</b><span>{readingWord.definition}</span><p>{readingEntry.example.translationZh}</p><small>{readingEntry.example.sourceType==='original-ielts-style'?'词穹原创雅思风格例句':`${readingEntry.example.sourceTitle||'用户提供参考资料'} · ${readingEntry.provenance.reviewStatus}`}</small><button onClick={()=>{if(readingIndex+1>=readingEntries.length){setReadingIndex(0);setReadingScore(0)}else setReadingIndex(index=>index+1);setReadingChoice('')}}>{readingIndex+1>=readingEntries.length?'再练一组':'下一题 →'}</button></div>}</article>:<div className="empty"><b>该主题暂无可用语境</b><p>请选择其他主题。</p></div>}
+    </section>}
+
+    {mode!=='home'&&mode!=='checkin'&&mode!=='records'&&mode!=='reading'&&<section className={`workspace ${mode==='plan'?'plan-only':''}`}>
       {mode!=='plan'&&<aside>
         <label className="search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索单词或释义"/></label>
         <button className="list-pick" onClick={()=>setShowLists(true)}><span><small>当前章节 · List {activeList}</small><b>{activeTheme?.themeZh||`List ${activeList}`}</b></span><i>选择 List →</i></button>
@@ -230,7 +254,7 @@ export default function Home() {
               {currentExtension.memoryAid&&<section className="memory-card"><small>联想记忆</small><p>{currentExtension.memoryAid.noteZh}</p></section>}
               <section className="relation-card"><small>主题关联</small><div className="relation-chips">{currentExtension.relations.map(relation=><button key={`${relation.label}-${relation.type}`} disabled={relation.isExtension} onClick={()=>relation.targetWordId&&openRelatedWord(relation.targetWordId)}><span>{relation.label}</span><i>{relation.isExtension?'扩展词':'查看 →'}</i></button>)}</div></section>
               <section><small>高频搭配</small><div className="collocations">{currentExtension.collocations.map(item=><p key={item.text}><b>{item.text}</b><span>{item.translationZh}</span></p>)}</div></section>
-              <section className="context-example"><small>原创雅思风格例句</small><p><HighlightTarget text={currentExtension.example.text} target={currentExtension.example.target}/></p><em>{currentExtension.example.translationZh}</em><div className="example-source">{currentExtension.example.copyrightStatus} · {currentExtension.provenance.reviewStatus} · {currentExtension.provenance.updatedAt}</div></section>
+              <section className="context-example"><small>{currentExtension.example.sourceType==='original-ielts-style'?'原创雅思风格例句':'原书语境例句'}</small><p><HighlightTarget text={currentExtension.example.text} target={currentExtension.example.target}/></p><em>{currentExtension.example.translationZh}</em><div className="example-source">{currentExtension.example.sourceTitle||currentExtension.example.copyrightStatus} · {currentExtension.provenance.reviewStatus} · {currentExtension.provenance.updatedAt}</div>{currentExtension.provenance.reviewStatus==='ocr-needs-human-review'&&<div className="review-warning">扫描资料经 OCR 提取，尚需逐条人工校对；发现问题请以原书为准。</div>}</section>
             </div>
           </div>}
         </article> : mode==='plan'&&planRound===2?<section className="plan-complete"><small>本组三轮已完成</small><h2>这一组，完成了。</h2><p>答错的词已经自动进入强化复习，不需要现在一次记牢。</p><div><span><strong>{planMastered}</strong> 已掌握</span><span><strong>{planReinforce}</strong> 需强化</span></div><h3>还要继续来一组吗？</h3><div className="plan-complete-actions"><button onClick={startAnotherGroup}>继续一组</button><button className="primary" onClick={finishCheckin}>完成并打卡</button></div></section>:<div className="empty"><b>{mode==='plan'?'正在进入下一轮':mode==='review'?'今天已经复习完成':'这里还没有单词'}</b><p>{mode==='plan'?'准备下一种训练方式。':mode==='review'?'去学几个新词，明天再回来。':'换一个 List 或搜索试试。'}</p></div>}
@@ -248,10 +272,11 @@ export default function Home() {
       <button className={mode==='learn'||mode==='saved'?'active':''} onClick={()=>openView('learn')}><b>文</b><span>词库</span></button>
       <button className={mode==='plan'||mode==='checkin'?'active':''} onClick={openTodayPlan}><b>{todayCheckin?'✓':'◉'}</b><span>计划</span></button>
       <button className={mode==='review'?'active':''} onClick={()=>openView('review')}><b>{due||'↻'}</b><span>复习</span></button>
+      <button className={mode==='reading'?'active':''} onClick={()=>openView('reading')}><b>阅</b><span>阅读</span></button>
     </nav>
 
     {showLists&&<div className="overlay" onClick={()=>setShowLists(false)}><section className="panel list-panel" onClick={e=>e.stopPropagation()}><div className="panel-head"><div><small>全部词库 · 22 个主题</small><h3>按原书主题选择 List</h3></div><button onClick={()=>setShowLists(false)}>×</button></div><div className="list-grid">{lists.map(l=>{const done=l.words.filter(w=>records[w.id]).length;const theme=themes.find(item=>item.list===l.number);return <button key={l.number} onClick={()=>chooseList(l.number)}><span>LIST {String(l.number).padStart(2,'0')} · {l.words.length} 词</span><b>{theme?.themeZh||'主题待核对'}</b><small>{theme?.themeEn||''}</small><i style={{width:`${l.words.length?done/l.words.length*100:0}%`}}/></button>})}</div></section></div>}
-    {showData&&<div className="overlay" onClick={()=>setShowData(false)}><section className="panel data-panel" onClick={e=>e.stopPropagation()}><div className="panel-head"><div><small>学习记录</small><h3>把进度带在身边</h3></div><button onClick={()=>setShowData(false)}>×</button></div><p>学习记录只存在这台设备的浏览器中。你可以导出备份，再在另一台设备上导入。</p><div className="data-actions"><button className="primary-action" onClick={exportData}>导出记录</button><button onClick={()=>fileRef.current?.click()}>导入记录</button><input ref={fileRef} type="file" accept="application/json" hidden onChange={importData}/></div></section></div>}
+    {showData&&<div className="overlay" onClick={()=>setShowData(false)}><section className="panel data-panel" onClick={e=>e.stopPropagation()}><div className="panel-head"><div><small>学习记录</small><h3>备份与恢复</h3></div><button onClick={()=>setShowData(false)}>×</button></div><p>学习记录只存在这台设备的浏览器中。导入前会自动保存当前数据，格式不正确的文件不会覆盖记录。</p><div className="data-actions"><button className="primary-action" onClick={exportData}>导出完整备份</button><button onClick={()=>fileRef.current?.click()}>从文件恢复</button><button onClick={restoreBackup}>恢复上一次</button><input ref={fileRef} type="file" accept="application/json" hidden onChange={importData}/></div></section></div>}
     {showPlan&&<div className="overlay" onClick={()=>setShowPlan(false)}><section className="panel plan-panel" onClick={e=>e.stopPropagation()}><div className="panel-head"><div><small>学习计划</small><h3>把目标变成今天的一小步</h3></div><button onClick={()=>setShowPlan(false)}>×</button></div><label><span>IELTS 考试日期</span><input type="date" min={day()} value={examDate} onChange={e=>setExamDate(e.target.value)}/></label><div className="plan-summary"><div><strong>{remaining.toLocaleString()}</strong><small>剩余单词</small></div><div><strong>{examDate?daysLeft:'—'}</strong><small>可用天数</small></div><div><strong>{examDate?dailyTarget:'—'}</strong><small>每日新词</small></div></div><p>今日计划会优先安排到期复习，再用新词补足每日目标。计划与学习记录一样，只保存在当前浏览器。</p><button className="save-plan" disabled={!examDate} onClick={()=>{localStorage.setItem('ielts-exam-date',examDate);setMode('plan');setShowPlan(false)}}>保存并开始今日计划</button></section></div>}
   </main>
 }
