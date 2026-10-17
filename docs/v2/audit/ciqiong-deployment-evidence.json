@@ -1,0 +1,53 @@
+{
+  "testedAt": "2026-10-17T09:55:50+08:00",
+  "timezone": "Asia/Shanghai",
+  "domain": "ciqiong.com",
+  "result": "failed",
+  "mustNotClaimProductionReady": true,
+  "dns": {
+    "resolvers": ["system", "223.5.5.5 AliDNS", "119.29.29.29 DNSPod", "1.1.1.1 Cloudflare"],
+    "aRecords": ["154.85.60.150", "152.32.171.65", "118.193.37.94"],
+    "edgeOneCnameObserved": false,
+    "registryNameservers": ["PK3.22.CN", "PK4.22.CN"]
+  },
+  "registration": {
+    "source": "Verisign RDAP",
+    "registrar": "22net, Inc.",
+    "registeredAt": "2010-12-24T19:56:27Z",
+    "expiresAt": "2026-12-24T19:56:27Z",
+    "status": ["client delete prohibited", "client transfer prohibited"]
+  },
+  "http": {
+    "status": 200,
+    "server": "nginx/1.31.6",
+    "observedTitle": "ciqiong.com域名出售",
+    "servesCiqiongApp": false
+  },
+  "https": {
+    "validCertificateObserved": false,
+    "perIp": {
+      "154.85.60.150": "TLS handshake timeout after ClientHello",
+      "152.32.171.65": "TLS connection closed during handshake",
+      "118.193.37.94": "TLS connection closed during handshake"
+    }
+  },
+  "mainland": {
+    "alidnsResultMatchesParkingIps": true,
+    "dnspodResultMatchesParkingIps": true,
+    "applicationReachableOnCustomDomain": false,
+    "multiRegionHttpTest": "blocked because DNS, origin and TLS prerequisites failed"
+  },
+  "backupSite": {
+    "url": "https://ciqiong-ielts-vocabulary.shailence.chatgpt.site/",
+    "homepageStatus": 200,
+    "criticalAssets": {
+      "/vocab.json": 200,
+      "/data/vocab-expansions.v1.json": 200,
+      "/data/list-themes.v1.json": 200,
+      "/data/reading-passages.v1.json": 200,
+      "/home-mountain.png": 200,
+      "/home-mountain-mobile.png": 200
+    },
+    "preserved": true
+  }
+}
