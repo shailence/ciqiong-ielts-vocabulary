@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-17",
+  "passages": [
+    {
+      "id": "chapter01-list01-earth-systems",
+      "chapterId": "01",
+      "chapterTitle": "自然地理",
+      "listId": 1,
+      "title": "Earth as an Interconnected System",
+      "wordCount": 183,
+      "focusWordIds": ["l1-1", "l1-2", "l1-3", "l1-4", "l1-6", "l1-9", "l1-10", "l1-22"],
+      "text": "Earth is often described as a collection of separate layers, but its natural systems constantly interact. The atmosphere contains the gases that surround the planet, including oxygen and carbon dioxide. Below it, the hydrosphere includes water in oceans, rivers, ice and the air. The solid outer region is the lithosphere, which consists of the crust and the upper part of the mantle. Energy and material move between these systems. For example, volcanic eruptions can release gases and mineral particles into the atmosphere. Rain then carries some particles into rivers and oceans, where they may influence aquatic life. Climate patterns also demonstrate this connection. During an El Niño event, changes in Pacific Ocean temperatures alter winds and rainfall far beyond the tropics. These shifts may produce drought in one region and destructive storms in another. Scientists therefore avoid studying each sphere in isolation. By combining atmospheric measurements, ocean observations and geological evidence, they can build more accurate models of environmental change. This systems approach also helps governments assess risks, because a disruption that begins in one part of Earth may create serious consequences elsewhere.",
+      "translationZh": "地球常被描述为若干彼此分离的层，但其自然系统始终相互作用。大气层包含环绕地球的气体，包括氧气和二氧化碳。水圈包括海洋、河流、冰以及空气中的水。固体外层是岩石圈，由地壳和地幔上部组成。能量和物质会在这些系统之间流动。例如，火山喷发可将气体和矿物颗粒释放到大气中；降雨又会把其中一些颗粒带入河流和海洋，并可能影响水生生物。气候模式同样体现了这种联系。厄尔尼诺期间，太平洋温度变化会改变远离热带地区的风和降雨。因此，科学家不会孤立研究各个圈层，而会综合大气测量、海洋观测和地质证据，建立更准确的环境变化模型。",
+      "source": {
+        "type": "original-reviewed",
+        "label": "词穹原创学术风格短文（非雅思真题原文）",
+        "copyrightStatus": "Original for 词穹; cleared for publication.",
+        "reviewStatus": "editorially-reviewed",
+        "reviewedAt": "2026-10-17"
+      },
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "Which statement best describes the lithosphere?",
+          "options": ["It contains all water on Earth.", "It includes the crust and upper mantle.", "It is made only of atmospheric gases.", "It controls all tropical rainfall."],
+          "answer": 1,
+          "explanationZh": "第二段明确说明岩石圈由地壳和地幔上部组成。"
+        },
+        {
+          "id": "q2",
+          "prompt": "Why does the passage mention El Niño?",
+          "options": ["To explain how minerals form", "To compare two kinds of volcano", "To show that ocean changes affect distant regions", "To prove that rainfall is always destructive"],
+          "answer": 2,
+          "explanationZh": "厄尔尼诺说明海洋温度的变化会影响远方的风和降雨。"
+        },
+        {
+          "id": "q3",
+          "prompt": "What is the main advantage of a systems approach?",
+          "options": ["It removes the need for measurements.", "It studies every sphere in isolation.", "It predicts the exact date of every disaster.", "It improves models and environmental risk assessment."],
+          "answer": 3,
+          "explanationZh": "文章最后指出，系统方法能改进环境模型，也有助于政府评估风险。"
+        }
+      ]
+    }
+  ]
+}

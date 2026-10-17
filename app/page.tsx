@@ -10,6 +10,7 @@ type Word = { id: string; order: number; word: string; definition: string; phone
 type VocabList = { number: number; title: string; words: Word[] };
 type ViewMode = "home"|"learn"|"review"|"saved"|"plan"|"checkin"|"records"|"reading";
 type ActivityDay = { attempts:number; learned:number; reviews:number; correct:number; seconds:number };
+type ReadingPassage = {id:string;chapterId:string;chapterTitle:string;listId:number;title:string;wordCount:number;focusWordIds:string[];text:string;translationZh:string;source:{type:string;label:string;copyrightStatus:string;reviewStatus:string;reviewedAt:string};questions:Array<{id:string;prompt:string;options:string[];answer:number;explanationZh:string}>};
 const drillOrder:Drill[]=["recognize","recall","dictation"];
 const planLabels=["认识与听音","四选一辨义","听音拼写"];
 
@@ -31,6 +32,7 @@ export default function Home() {
   const [lists,setLists]=useState<VocabList[]>([]);
   const [themes,setThemes]=useState<ListTheme[]>([]);
   const [extensions,setExtensions]=useState<VocabularyExtension[]>([]);
+  const [passages,setPassages]=useState<ReadingPassage[]>([]);
   const [records,setRecords]=useState<Records>({});
   const [checkins,setCheckins]=useState<Checkin[]>([]);
   const [dailyPlans,setDailyPlans]=useState<Record<string,string[]>>({});
@@ -62,6 +64,8 @@ export default function Home() {
   const [readingIndex,setReadingIndex]=useState(0);
   const [readingChoice,setReadingChoice]=useState("");
   const [readingScore,setReadingScore]=useState(0);
+  const [activePassage,setActivePassage]=useState<ReadingPassage|null>(null);
+  const [passageAnswers,setPassageAnswers]=useState<Record<string,number>>({});
   const [dataError,setDataError]=useState("");
   const fileRef=useRef<HTMLInputElement>(null);
   const interactionStarted=useRef(Date.now());
@@ -72,7 +76,8 @@ export default function Home() {
       fetch(`${import.meta.env.BASE_URL||'/'}vocab.json`).then(r=>r.json()),
       fetch(`${import.meta.env.BASE_URL||'/'}data/list-themes.v1.json`).then(r=>r.json()),
       fetch(`${import.meta.env.BASE_URL||'/'}data/vocab-expansions.v1.json`).then(r=>r.json()),
-    ]).then(([vocab,themeData,extensionData])=>{setLists(vocab);setThemes(themeData.lists||[]);setExtensions(extensionData.entries||[])}).catch(()=>setDataError('词库加载失败，请刷新页面重试。'));
+      fetch(`${import.meta.env.BASE_URL||'/'}data/reading-passages.v1.json`).then(r=>r.json()),
+    ]).then(([vocab,themeData,extensionData,readingData])=>{setLists(vocab);setThemes(themeData.lists||[]);setExtensions(extensionData.entries||[]);setPassages(readingData.passages||[])}).catch(()=>setDataError('词库加载失败，请刷新页面重试。'));
     const state=loadState(localStorage);
     setRecords(state.records);setExamDate(state.settings.examDate);setCheckins(state.checkins);setDailyPlans(state.dailyPlans);setActivity((state.sessions.dailyActivity as Record<string,ActivityDay>)||{});
     const active=state.sessions.activePlan as {date?:string;ids?:string[];round?:number;extra?:boolean}|undefined;
@@ -124,6 +129,8 @@ export default function Home() {
   const readingEntry=readingEntries[readingIndex];
   const readingWord=readingEntry?allWords.find(word=>word.id===readingEntry.wordId):undefined;
   const readingOptions=useMemo(()=>{if(!readingWord)return[];const same=allWords.filter(word=>word.list===readingWord.list&&word.id!==readingWord.id).slice(0,3);return [readingWord,...same].sort((a,b)=>((a.order*13)%7)-((b.order*13)%7))},[readingWord,allWords]);
+  const completedLists=useMemo(()=>new Set(lists.filter(list=>list.words.every(word=>records[word.id]?.passes?.[day()]?.length===3||records[word.id]?.stage>0)).map(list=>list.number)),[lists,records]);
+  const passageScore=activePassage?activePassage.questions.filter(question=>passageAnswers[question.id]===question.answer).length:0;
 
   useEffect(()=>{if(mode==='plan'&&planIds.length&&activeWords.length===0&&planRound<2){setPlanRound(r=>r+1);setIndex(0);setRevealed(false);setAnswer("");setChoiceSelected("")}},[mode,planIds.length,activeWords.length,planRound]);
   useEffect(()=>{if(mode==='plan'&&activeDrill==='recognize'&&current){const t=setTimeout(speak,180);return()=>clearTimeout(t)}},[mode,activeDrill,current?.id]);
@@ -212,8 +219,10 @@ export default function Home() {
     </section>}
 
     {mode==='reading'&&<section className="reading-page">
-      <header><div><p className="eyebrow">THEME READING</p><h1>主题阅读训练</h1><p>用真实词库的语境例句完成选词理解；答完立即显示翻译与来源状态。</p></div><label>主题<select value={readingTheme} onChange={event=>{setReadingTheme(Number(event.target.value));setReadingIndex(0);setReadingChoice('');setReadingScore(0)}}>{Array.from(new Map(themes.map(theme=>[theme.chapterNumbers[0],theme])).values()).map(theme=><option key={theme.chapterNumbers[0]} value={theme.chapterNumbers[0]}>Chapter {String(theme.chapterNumbers[0]).padStart(2,'0')} · {theme.themeZh}</option>)}</select></label></header>
-      {readingEntry&&readingWord?<article className="reading-card"><div className="reading-progress"><span>{readingIndex+1} / {readingEntries.length}</span><b>得分 {readingScore}</b></div><p className="reading-sentence">{readingEntry.example.text.replace(new RegExp(`\\b${readingEntry.example.target.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`,'i'),'______')}</p><small>选择最符合语境的词</small><div className="reading-options">{readingOptions.map(option=><button key={option.id} disabled={Boolean(readingChoice)} className={readingChoice?(option.id===readingWord.id?'correct':readingChoice===option.id?'wrong':''):''} onClick={()=>{setReadingChoice(option.id);if(option.id===readingWord.id)setReadingScore(score=>score+1)}}>{option.word}</button>)}</div>{readingChoice&&<div className="reading-answer"><b>{readingWord.word}</b><span>{readingWord.definition}</span><p>{readingEntry.example.translationZh}</p><small>{readingEntry.example.sourceType==='original-ielts-style'?'词穹原创雅思风格例句':`${readingEntry.example.sourceTitle||'用户提供参考资料'} · ${readingEntry.provenance.reviewStatus}`}</small><button onClick={()=>{if(readingIndex+1>=readingEntries.length){setReadingIndex(0);setReadingScore(0)}else setReadingIndex(index=>index+1);setReadingChoice('')}}>{readingIndex+1>=readingEntries.length?'再练一组':'下一题 →'}</button></div>}</article>:<div className="empty"><b>该主题暂无可用语境</b><p>请选择其他主题。</p></div>}
+      <header><div><p className="eyebrow">THEME READING</p><h1>主题阅读训练</h1><p>学完一个 List，再用 150–250 词的短文把重点词带入真实阅读理解。</p></div><label>主题<select value={readingTheme} onChange={event=>{setReadingTheme(Number(event.target.value));setReadingIndex(0);setReadingChoice('');setReadingScore(0);setActivePassage(null)}}>{Array.from(new Map(themes.map(theme=>[theme.chapterNumbers[0],theme])).values()).map(theme=><option key={theme.chapterNumbers[0]} value={theme.chapterNumbers[0]}>Chapter {String(theme.chapterNumbers[0]).padStart(2,'0')} · {theme.themeZh}</option>)}</select></label></header>
+      {!activePassage&&<div className="passage-list">{passages.filter(passage=>Number(passage.chapterId)===readingTheme).map(passage=><article key={passage.id}><small>CHAPTER {passage.chapterId} · LIST {String(passage.listId).padStart(2,'0')} · {passage.wordCount} WORDS</small><h2>{passage.title}</h2><p>{passage.source.label}</p><div><span>{passage.focusWordIds.length} 个重点词</span><span>3 道理解题</span><span>{completedLists.has(passage.listId)?'✓ List 已完成':'可提前试读'}</span></div><button onClick={()=>{setActivePassage(passage);setPassageAnswers({})}}>{completedLists.has(passage.listId)?'开始阅读关卡 →':'提前阅读 →'}</button></article>)}</div>}
+      {activePassage&&<article className="passage-reader"><button className="passage-back" onClick={()=>setActivePassage(null)}>← 返回阅读列表</button><small>CHAPTER {activePassage.chapterId} · LIST {String(activePassage.listId).padStart(2,'0')} · {activePassage.wordCount} WORDS</small><h2>{activePassage.title}</h2><p className="passage-text">{activePassage.text}</p><details><summary>查看中文参考翻译</summary><p>{activePassage.translationZh}</p></details><div className="passage-source">来源：{activePassage.source.label} · {activePassage.source.reviewStatus} · {activePassage.source.reviewedAt}</div><section className="comprehension"><h3>阅读理解</h3>{activePassage.questions.map((question,questionIndex)=><div className="question" key={question.id}><b>{questionIndex+1}. {question.prompt}</b><div>{question.options.map((option,optionIndex)=><button key={option} disabled={passageAnswers[question.id]!==undefined} className={passageAnswers[question.id]!==undefined?(optionIndex===question.answer?'correct':passageAnswers[question.id]===optionIndex?'wrong':''):''} onClick={()=>setPassageAnswers(value=>({...value,[question.id]:optionIndex}))}>{String.fromCharCode(65+optionIndex)}. {option}</button>)}</div>{passageAnswers[question.id]!==undefined&&<p>{question.explanationZh}</p>}</div>)}{Object.keys(passageAnswers).length===activePassage.questions.length&&<div className="passage-result"><strong>{passageScore} / {activePassage.questions.length}</strong><span>{passageScore===activePassage.questions.length?'理解准确，已完成本篇阅读。':'建议结合翻译重新阅读，再挑战一次。'}</span><button onClick={()=>setPassageAnswers({})}>重新作答</button></div>}</section></article>}
+      {!activePassage&&readingEntry&&readingWord&&<article className="reading-card context-drill"><div className="reading-progress"><span>补充训练 · 语境选词 {readingIndex+1} / {readingEntries.length}</span><b>得分 {readingScore}</b></div><p className="reading-sentence">{readingEntry.example.text.replace(new RegExp(`\\b${readingEntry.example.target.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`,'i'),'______')}</p><small>选择最符合语境的词</small><div className="reading-options">{readingOptions.map(option=><button key={option.id} disabled={Boolean(readingChoice)} className={readingChoice?(option.id===readingWord.id?'correct':readingChoice===option.id?'wrong':''):''} onClick={()=>{setReadingChoice(option.id);if(option.id===readingWord.id)setReadingScore(score=>score+1)}}>{option.word}</button>)}</div>{readingChoice&&<div className="reading-answer"><b>{readingWord.word}</b><span>{readingWord.definition}</span><p>{readingEntry.example.translationZh}</p><button onClick={()=>{if(readingIndex+1>=readingEntries.length){setReadingIndex(0);setReadingScore(0)}else setReadingIndex(index=>index+1);setReadingChoice('')}}>{readingIndex+1>=readingEntries.length?'再练一组':'下一题 →'}</button></div>}</article>}
     </section>}
 
     {mode!=='home'&&mode!=='checkin'&&mode!=='records'&&mode!=='reading'&&<section className={`workspace ${mode==='plan'?'plan-only':''}`}>

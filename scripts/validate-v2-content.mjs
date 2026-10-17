@@ -6,6 +6,7 @@ const vocab = await readJson("public/vocab.json");
 const themes = await readJson("public/data/list-themes.v1.json");
 const demo = await readJson("public/data/vocab-expansions.demo.v1.json");
 const full = await readJson("public/data/vocab-expansions.v1.json");
+const reading = await readJson("public/data/reading-passages.v1.json");
 
 const lists = Array.isArray(vocab) ? vocab : vocab.lists;
 assert.equal(lists.length, 64, "原始词库必须保留 64 个 List");
@@ -67,4 +68,13 @@ for (const entry of full.entries) {
   assert(entry.exampleSource && entry.contentStatus, `${entry.wordId} 缺少来源或审核状态`);
 }
 
-console.log(`V2 内容校验通过：${lists.length} Lists，${words.length} 原始词条，${full.entries.length} 条结构化拓展。`);
+for (const passage of reading.passages) {
+  const actualWords = passage.text.trim().split(/\s+/).length;
+  assert(actualWords >= 150 && actualWords <= 250, `${passage.id} 必须为 150–250 词`);
+  assert.equal(passage.wordCount, actualWords, `${passage.id} 的词数标注不准确`);
+  assert.equal(passage.questions.length, 3, `${passage.id} 必须包含三道理解题`);
+  assert.equal(passage.source.type, "original-reviewed", `${passage.id} 必须明确来源和审核状态`);
+  for (const wordId of passage.focusWordIds) assert(ids.has(wordId), `${passage.id} 引用了不存在的词条 ${wordId}`);
+}
+
+console.log(`V2 内容校验通过：${lists.length} Lists，${words.length} 原始词条，${full.entries.length} 条结构化拓展，${reading.passages.length} 篇阅读关卡。`);
